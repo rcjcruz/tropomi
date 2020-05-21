@@ -2,7 +2,7 @@
 import numpy as np
 import xarray as xr
 import netCDF4 as nc
-from glob import iglob
+from glob import glob
 from os.path import join
 from collections import namedtuple
 
@@ -20,6 +20,21 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from cartopy.mpl.geoaxes import GeoAxes
 GeoAxes._pcolormesh_patched = Axes.pcolormesh
 
+# Variables
+# Define plot extent centred around Toronto
+Point = namedtuple('Point', 'lon lat')
+cities_coords = {'Toronto_coords': Point(-79.3832, 43.6532),
+                'Ottawa_coords': Point(-75.6972, 45.5215),
+                'Montreal_coords': Point(-73.5673, 45.5017),
+                'New York_coords': Point(-74.0060, 40.7128),
+                'Chicago_coords': Point(-87.6298, 41.8781)
+                }
+
+extent_size = 15
+plot_limits = (cities_coords['Toronto_coords'].lon-extent_size,
+               cities_coords['Toronto_coords'].lon+extent_size,
+               cities_coords['Toronto_coords'].lat-extent_size,
+               cities_coords['Toronto_coords'].lat+extent_size)
 
 # Functions
 
@@ -53,7 +68,7 @@ def plot_no2(no2tc: xr.DataArray,
              fields: list,
              short_file_name: str,
              plot_extent=(-180, 180, -90, 90)):
-    """Return a Cartopy plot of tropospheric NO2 vertical column over Toronto
+    """Return a Cartopy plot of total NO2 vertical column over Toronto
     using no2tc data.
     """
     # Create the figures and axes
@@ -63,15 +78,9 @@ def plot_no2(no2tc: xr.DataArray,
     # Set map projection to Plate Carree
     ax = plt.axes(projection=ccrs.PlateCarree())
 
-    # subset dataset for points over Toronto
-    no2tc = subset(no2tc, plot_extent)
-
-    # set all negative value to 0
-    no2tc = no2tc.where(no2tc > 0, 0)
-
-    if plot_type == 'Toronto' or plot_type == 'toronto':
+    if plot_type == 'toronto':
         ax.text(0, 1.05,
-            r"NO$_2$ tropospheric vertical column",
+            r"NO$_2$ total vertical column",
             fontsize=18,
             transform=ax.transAxes)
         ax.text(0, 1.02, 
@@ -82,12 +91,40 @@ def plot_no2(no2tc: xr.DataArray,
                 fontsize=14, 
                 transform=ax.transAxes)
 
+        # set plot_extent as limits around Toronto
+        plot_extent = plot_limits
         # set map to plot within plot_extent
         ax.set_extent(plot_extent)
         
+        # # plot Toronto
+        # ax.plot(cities_coords['Toronto_coords'].lon, 
+        #         cities_coords['Toronto_coords'].lat, 
+        #         marker='o',
+        #         markeredgewidth=1, 
+        #         markeredgecolor='black',
+        #         markerfacecolor='black', 
+        #         markersize=10)
+        # ax.text(-79, 44, 'Toronto', transform=ccrs.Geodetic())
+        
+        # Plot cities of interest
+        for city in cities_coords.keys():
+            city_name = city[:-7]
+            ax.plot(cities_coords[city].lon, 
+                cities_coords[city].lat, 
+                marker='*',
+                markeredgewidth=1, 
+                markeredgecolor='black',
+                markerfacecolor='black', 
+                markersize=5)
+            ax.text(cities_coords[city].lon - 1, 
+                    cities_coords[city].lat + 0.3, 
+                    city_name, 
+                    transform=ccrs.Geodetic())
+        
+            
     elif plot_type == 'globe':
         ax.text(0, 1.10,
-                r"NO$_2$ tropospheric vertical column",
+                r"NO$_2$ total vertical column",
                 fontsize=18,
                 transform=ax.transAxes)
         ax.text(0, 1.04,
@@ -103,6 +140,13 @@ def plot_no2(no2tc: xr.DataArray,
     else:
         raise ValueError('Invalid plot_type. Expected one of: %s' % 'toronto, globe')
     
+    
+    # subset dataset for points over Toronto
+    no2tc = subset(no2tc, plot_extent)
+
+    # set all negative value to 0
+    no2tc = no2tc.where(no2tc > 0, 0)
+    
     # set plot frame color
     ax.outline_patch.set_edgecolor('lightgray')
 
@@ -111,18 +155,11 @@ def plot_no2(no2tc: xr.DataArray,
                                             transform=ccrs.PlateCarree(),
                                             infer_intervals=True,
                                             cmap='jet',
-                                            norm=LogNorm(vmin=10e-11,
-                                                         vmax=10e-3),
+                                            norm=LogNorm(vmin=10e-6),
                                             x='longitude',
                                             y='latitude',
                                             zorder=0,
                                             add_colorbar=False)
-    
-    # plot Toronto
-    ax.plot(toronto_coords.lon, toronto_coords.lat, marker='o',
-            markeredgewidth=1, markeredgecolor='black',
-            markerfacecolor='black', markersize=10)
-    ax.text(-79, 44, 'Toronto', transform=ccrs.Geodetic())
 
     # remove default title
     ax.set_title('')
@@ -134,9 +171,15 @@ def plot_no2(no2tc: xr.DataArray,
     cbar.outline.set_visible(False)
 
     # define Natural Earth features
-    states_provinces = cfeature.NaturalEarthFeature(
+    countries = cfeature.NaturalEarthFeature(
         category='cultural',
         name='admin_0_boundary_lines_land',
+        scale='10m',
+        facecolor='none')
+
+    states_provinces = cfeature.NaturalEarthFeature(
+        category='cultural',
+        name='admin_1_states_provinces_lines',
         scale='10m',
         facecolor='none')
 
@@ -147,7 +190,8 @@ def plot_no2(no2tc: xr.DataArray,
         facecolor='none')
     
     # set map background and features
-    ax.add_feature(states_provinces, edgecolor='black')
+    ax.add_feature(countries, edgecolor='black')
+    ax.add_feature(states_provinces, edgecolor='gray')
     ax.add_feature(cfeature.COASTLINE)
     # ax.add_feature(lakes_50m, edgecolor='blue')
     # ax.coastlines(resolution='50m', color='black', linewidth=1)
@@ -164,9 +208,9 @@ def plot_no2(no2tc: xr.DataArray,
     # Ask user if they would like to save the plot
     is_save = str(input('Do you want to save a png of this plot? \n (Y/N)'))
     if is_save=='Y' or is_save=='y':
-        if plot_type == 'toronto' or 'Toronto':
-            pngfile = '{0}.png'.format('toronto_figures/' + short_file_name[:-3])
+        if (plot_type == 'globe'):
+            pngfile = '{0}.png'.format('world_figures/WOR_' + short_file_name[:-3])
             fig.savefig(pngfile, dpi = 300)
-        else:
-            pngfile = '{0}.png'.format('world_figures/' + short_file_name[:-3])
+        elif plot_type == 'toronto':
+            pngfile = '{0}.png'.format('toronto_figures/TOR_' + short_file_name[:-3])
             fig.savefig(pngfile, dpi = 300)

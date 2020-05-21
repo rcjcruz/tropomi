@@ -25,11 +25,11 @@ file_object = open(outputfile, "w+")
 ncfiles = []
 
 # Iterate over the files in the no2 directory and append them to the list
-for file in glob.glob("/export/data/scratch/tropomi/no2/*.nc"):
+for file in glob.glob("/export/data/scratch/tropomi/no2/*__20200505*.nc"):
     # Only add datasets taken on May 5, 2020
-    # if file [53:61] == 'YYYYMMDD': # looking for a specific day
+    # if file [53:61] == '20200505': # looking for a specific day
     # if file[53:59] == "202005": # looking for a specific month
-    if '20200505T171512_2' in file:
-        file_object.write(file + "\n")
+    # if '20200505T171512_2' in file:
+    file_object.write(file + "\n")
 
 file_object.close()
