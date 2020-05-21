@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # Editable variables
-outputfile = "/home/rcruz/scripts/inventory.txt" # file to save the results 
+outputfile = "inventory.txt" # file to save the results 
 
 if os.path.getsize(outputfile) > 0:
     open(outputfile, 'w').close()
@@ -28,7 +28,8 @@ ncfiles = []
 for file in glob.glob("/export/data/scratch/tropomi/no2/*.nc"):
     # Only add datasets taken on May 5, 2020
     # if file [53:61] == 'YYYYMMDD': # looking for a specific day
-    if file[53:59] == "202005": # looking for a specific month
+    # if file[53:59] == "202005": # looking for a specific month
+    if '20200505T171512_2' in file:
         file_object.write(file + "\n")
 
 file_object.close()

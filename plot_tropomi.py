@@ -100,7 +100,7 @@ for test_file in fileList:
         is_save=str(input('\nWould you like to save this map? Please enter Y or N \n'))
         if is_save == 'Y' or is_save == 'y':
             # Saves plot as a png in the tropomi_figures folder
-            pngfile = '{0}.png'.format('tropomi_figures/' + short_file_name[:-3])
+            pngfile = '{0}.png'.format('world_figures/' + short_file_name[:-3])
             fig.savefig(pngfile, dpi = 300)
         #Close the hdf4 file
         file.close()
