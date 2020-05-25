@@ -20,6 +20,11 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from cartopy.mpl.geoaxes import GeoAxes
 GeoAxes._pcolormesh_patched = Axes.pcolormesh
 
+# Suppress warnings
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=RuntimeWarning)
+
 # Variables
 # Define plot extent centred around Toronto
 Point = namedtuple('Point', 'lon lat')
