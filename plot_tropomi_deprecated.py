@@ -36,7 +36,22 @@ except:
     print('Did not find a text file containing file names (perhaps name does not match)')
     sys.exit()
 
-# test_file = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200505T171512_20200505T185642_13270_01_010302_20200507T092201.nc'
+test_file = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200505T171512_20200505T185642_13270_01_010302_20200507T092201.nc'
+file = nc.Dataset(test_file, 'r')
+# read the data
+ds = file
+grp = 'PRODUCT'
+latmn, lonmn, latmx, lonmx = (-90, -180, 90, 180)
+lon = ds.groups[grp].variables['longitude'][0].flatten() # longitude
+lat = ds.groups[grp].variables['latitude'][0].flatten() # latitude
+lat_flt = (lat>latmn)*(lat<latmx)
+lon_flt = (lon>lonmn)*(lon<lonmx)
+sds_name='nitrogendioxide_tropospheric_column'
+map_label='mol/m2'
+data = ds.groups[grp].variables[sds_name][0,:,:]
+
+
+
 for test_file in fileList:
     test_file=test_file.strip()
     short_file_name=test_file[33:]

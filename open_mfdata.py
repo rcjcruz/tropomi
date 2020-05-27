@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Script to open multiple netCDF4 files to plot onto a map of the world using
+xr.open_mfdataset().
+"""
+
+###############
+
 # Preamble
 import warnings
 import numpy as np
@@ -27,11 +36,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
 # Script
-paths = glob("/export/data/scratch/tropomi/no2/*__20200505*.nc")
+paths = glob("/export/data/scratch/tropomi/no2/*__20200501*.nc")
 file_name = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200505T171512_20200505T185642_13270_01_010302_20200507T092201.nc'
-no2 = xr.open_mfdataset(file_name, group='PRODUCT')[
+no2 = xr.open_mfdataset(paths, group='PRODUCT')[
     'nitrogendioxide_tropospheric_column']
-qa_value = xr.open_mfdataset(file_name, group='PRODUCT')[
+qa_value = xr.open_mfdataset(paths, group='PRODUCT')[
     'qa_value']
 no2_qa = xr.concat((no2, qa_value), dim='time')
 
@@ -60,7 +69,7 @@ plot_limits = (cities_coords['Toronto_coords'].lon-extent_size,
 
 
 def subset(no2tc: xr.DataArray,
-           plot_extent=(-180, 180, -90, 90)):
+           plot_extent=(-179, 179, -90, 90)):
     """Return a subset of no2tc data over the plot extent.
     """
     e, w, s, n = plot_extent
@@ -75,7 +84,7 @@ def subset(no2tc: xr.DataArray,
     return no2tc
 
 
-no2_qa = subset(no2_qa, plot_limits)
+no2_qa = subset(no2_qa)
 
 
 # PLOTTING
@@ -90,18 +99,21 @@ no2_qa = no2_qa.where(no2_qa > 0, 0)
 
 # set plot frame color
 ax.outline_patch.set_edgecolor('lightgray')
-ax.set_extent(plot_limits)
+# ax.set_extent(plot_limits)
+ax.set_global()
 
 # plot data
 im = no2_qa.isel(time=0).plot.pcolormesh(ax=ax,
                                       transform=ccrs.PlateCarree(),
                                       infer_intervals=True,
                                       cmap='jet',
-                                      norm=LogNorm(vmin=10e-11),
+                                      norm=LogNorm(vmin=10e-6),
+                                      robust=True,
                                       x='longitude',
                                       y='latitude',
                                       zorder=0,
                                       add_colorbar=False)
+
 countries = cfeature.NaturalEarthFeature(
     category='cultural',
     name='admin_0_boundary_lines_land',
@@ -112,6 +124,12 @@ ax.add_feature(countries, edgecolor='black')
 ax.add_feature(cfeature.COASTLINE)
 # ax.add_feature(lakes_50m, edgecolor='blue')
 # ax.coastlines(resolution='50m', color='black', linewidth=1)
+
+# set colorbar properties
+cbar_ax = fig.add_axes([0.38, 0.05, 0.25, 0.01])
+cbar = plt.colorbar(im, cax=cbar_ax, orientation='horizontal')
+cbar.set_label(r"NO$_2$ (mol/m$^2$)", labelpad=-45, fontsize=14)
+cbar.outline.set_visible(False)
 
 # set gridlines
 gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
