@@ -1,3 +1,7 @@
+"""
+Needs to be updated.
+"""
+
 # Preamble
 import numpy as np
 import xarray as xr
@@ -77,7 +81,7 @@ def plot_no2(no2tc: xr.DataArray,
     using no2tc data.
     """
     # Create the figures and axes
-    fig, ax = plt.subplots(figsize=(15, 10))
+    fig, ax = plt.subplots(figsize=(12, 8))
     fig.tight_layout
 
     # Set map projection to Plate Carree
