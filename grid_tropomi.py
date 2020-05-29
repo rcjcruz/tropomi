@@ -11,32 +11,51 @@ Averaged values are found in val_arr_mean array (default shape: (180, 360))
 import warnings
 import numpy as np
 import xarray as xr
+import pandas as pd
 from glob import glob
 import sys
-from open_tropomi import *
-from dask.diagnostics import ProgressBar
+import open_tropomi as ot
+import points_of_interest as poi
 
-def aggregate_tropomi(ds, bbox=(-90, -180, 90, 180), res=1):
+#############################
+
+
+def aggregate_tropomi(ds, week_num, res=0.05, plot_type='toronto'):
+    """
+    Return a xr.DataArray with averaged NO2 product aggregated over a uniform
+    lat/lon grid with bounds defined by bbox and resolution res.
+
+    week_num must be int and 1 <= week_num <= 52.
+    plot_type: 'toronto' or 'world'
+    """
+
+    # Define boundaries depending on if plot_type is 'world' or 'toronto'
+    if plot_type == 'world':
+        bbox = (-180, 180, -90, 90)
+    elif plot_type == 'toronto':
+        bbox = poi.plot_limits
+
     # lat/lon max/min
-    latmn, lonmn, latmx, lonmx = bbox
+    lonmn, lonmx, latmn, latmx = bbox
     # create a uniform lat/lon grid
     lat_bnds = np.arange(latmn, latmx, res)
     lon_bnds = np.arange(lonmn, lonmx, res)
+
     # val_arr will accumulate the values within each grid entry
     val_arr = np.zeros([lat_bnds.size, lon_bnds.size])
     # densarr will count the number of observations that occur within that grid entry
     dens_arr = np.zeros([lat_bnds.size, lon_bnds.size], dtype=np.int32)
 
-    # Get an array of no2, lat, lon values
+    # Load an array of no2, lat, lon values
     no2 = ds['nitrogendioxide_tropospheric_column'].values
     lat = ds.latitude.values
     lon = ds.longitude.values
 
-    # Check if the lat and lon values are found within the lat/lon mn/mx
+    # Check if the lat and lon values are found within lat/lon bounds
     lat_flt = (lat > latmn) * (lat < latmx)
     lon_flt = (lon > lonmn) * (lon < lonmx)
 
-    # Create a filter array with only the lat/lon values in
+    # Create array to filter data points found within lat/lon bounds
     filter_arr = lat_flt * lon_flt
 
     # Keep no2 values that are within the bounded lat/lon
@@ -55,7 +74,7 @@ def aggregate_tropomi(ds, bbox=(-90, -180, 90, 180), res=1):
     for i in range(no2.size):
         # Find the indices in the lat/lon_bnds grid at which the
         # max/min lat/lon would fit (i.e. finding the grid squares that the data
-        # point has values)
+        # point has values for)
         lat_inds = np.searchsorted(lat_bnds, np.array([vlatmn[i], vlatmx[i]]))
         lon_inds = np.searchsorted(lon_bnds, np.array([vlonmn[i], vlonmx[i]]))
 
@@ -77,23 +96,24 @@ def aggregate_tropomi(ds, bbox=(-90, -180, 90, 180), res=1):
         np.zeros_like(val_arr)), where=(dens_arr != 0))
 
     # Load date of orbit; will need to update when I work with multiple days
-    date = str(ds.time.data)
-    date = np.array([date[:date.find('T')]])
+    date = pd.to_datetime(ds.time.data).floor('D')
 
     # Create a new DataArray where each averaged value corresponds to
     # lat/lon values that will be plotted on a PlateCarree projection
     new_ds = xr.DataArray(np.array([val_arr_mean]),
                           dims=('time', 'latitude', 'longitude'),
-                          coords={'time': date,
+                          coords={'time': np.array([date]),
                                   'latitude': lat_bnds,
                                   'longitude': lon_bnds})
+
     return new_ds
 
 #############################
 
+
 if __name__ == '__main__':
     # f='/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200502T080302_20200502T094432_13222_01_010302_20200504T005011.nc'
-    f = '*_20200505*_*.nc'
-    ds=dsread(f)
-    ds=aggregate_tropomi(ds)
-    print(ds)
+    f = '*__20200505*_*.nc'
+    g = '*__20200504*_*.nc'
+    ds1 = aggregate_tropomi(ot.dsread(f))
+    ds2 = aggregate_tropomi(ot.dsread(g))

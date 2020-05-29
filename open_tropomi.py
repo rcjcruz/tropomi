@@ -9,7 +9,11 @@ to time_utc of recorded observation.
 """
 
 import xarray as xr
+import pandas as pd
 import os
+import calendar
+import datetime
+from datetime import timedelta
 
 # Suppress warnings
 import warnings
@@ -70,9 +74,16 @@ def dsread(f):
 
 #############################
 
+# def find_week(ds, week_numbers: list):
+    
+
+
 if __name__ == '__main__':
-    # f = '*_20200505*_*.nc'
+    f = '*__20200504*_*.nc'
+    g = '*__20200505*_*.nc'
     # Work with this specific dataframe so that I get the same value as test_aggregate.py
-    f= '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200502T080302_20200502T094432_13222_01_010302_20200504T005011.nc'
-    ds = dsread(f)
-    print(ds)
+    # f= '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200502T080302_20200502T094432_13222_01_010302_20200504T005011.nc'
+    ds1 = dsread(f)
+    ds2 = dsread(g)
+    
+    d = pd.to_datetime(ds1.time.data)
