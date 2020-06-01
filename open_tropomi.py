@@ -74,10 +74,6 @@ def dsread(f):
 
 #############################
 
-# def find_week(ds, week_numbers: list):
-    
-
-
 if __name__ == '__main__':
     f = '*__20200504*_*.nc'
     g = '*__20200505*_*.nc'
@@ -86,4 +82,6 @@ if __name__ == '__main__':
     ds1 = dsread(f)
     ds2 = dsread(g)
     
-    d = pd.to_datetime(ds1.time.data)
+    d = pd.to_datetime(ds1.time.data).week
+    
+    

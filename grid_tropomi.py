@@ -111,9 +111,35 @@ def aggregate_tropomi(ds, week_num, res=0.05, plot_type='toronto'):
 #############################
 
 
+def check_valid(ds, week_num_range):
+    """
+    Check if dataset ds has data for the valid range of week numbers defined by
+    week_num_range.
+
+    ds: xr.Dataset
+    week_num_range: [week_num_start, week_num_end]
+    week_num start and week_num_end must be odd and even, respectively. 
+    
+    Return boolean if week number of ds is in the week_num_range.
+    """
+    week_one, week_two = week_num_range
+    if (week_one % 2 != 1) or (week_two % 2 != 0) or (week_two - week_one != 1):
+        return ValueError('First entry of week_num_range must be an odd int, \
+            second entry must be an even int, and the difference between \
+                first and second entry must be 1.')
+
+    ds_week = pd.to_datetime(ds.time.data).week
+    
+    if (week_one <= ds_week) and (ds_week <= week_two):
+        return True
+    else:
+        return False
+
 if __name__ == '__main__':
     # f='/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200502T080302_20200502T094432_13222_01_010302_20200504T005011.nc'
     f = '*__20200505*_*.nc'
     g = '*__20200504*_*.nc'
-    ds1 = aggregate_tropomi(ot.dsread(f))
-    ds2 = aggregate_tropomi(ot.dsread(g))
+    ds1 = ot.dsread(f)
+    ds2 = ot.dsread(g)
+    # ds1 = aggregate_tropomi(ot.dsread(f))
+    # ds2 = aggregate_tropomi(ot.dsread(g))
