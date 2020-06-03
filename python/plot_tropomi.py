@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Usage: plot_tropomi.py
+
+Script contains functions:
+    - plot_tropomi(ds, res, plot_type='toronto'):
+    
+Script to grid TROPOMI data into a uniform lat/lon grid spanning from -180 to 180
+longitude, -90 to 90 latitude.
+
+Averaged values are found in val_arr_mean array
+"""
+
 # Preamble
 import open_tropomi as ot
 import grid_tropomi as gt
@@ -28,7 +42,7 @@ GeoAxes._pcolormesh_patched = Axes.pcolormesh
 #############################
 
 
-def plot_tropomi(ds, res, plot_type='world'):
+def plot_tropomi(ds, res, plot_type='toronto'):
     """
     Return a Cartopy plot of averaged TROPOMI data ds.  
 
@@ -179,10 +193,10 @@ def plot_tropomi(ds, res, plot_type='world'):
         if is_save == 'Y' or is_save == 'y':
             if (plot_type == 'world'):
                 pngfile = '{0}.png'.format(
-                    'world_figures/WOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
+                    '../world_figures/WOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
             elif (plot_type == 'toronto'):
                 pngfile = '{0}.png'.format(
-                    'toronto_figures/TOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
+                    '../toronto_figures/TOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
 
             fig.savefig(pngfile, dpi=300)
 

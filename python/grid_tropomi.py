@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Usage: grid_tropomi.py
+
+Script contains functions:
+    - aggregate_tropomi(ds, week_num, res=0.05, plot_type='toronto')
+    
 Script to grid TROPOMI data into a uniform lat/lon grid spanning from -180 to 180
 longitude, -90 to 90 latitude.
 
-Averaged values are found in val_arr_mean array (default shape: (180, 360))
+Averaged values are found in val_arr_mean array
 """
 
 # Preamble
@@ -25,8 +30,15 @@ def aggregate_tropomi(ds, week_num, res=0.05, plot_type='toronto'):
     Return a xr.DataArray with averaged NO2 product aggregated over a uniform
     lat/lon grid with bounds defined by bbox and resolution res.
 
-    week_num must be int and 1 <= week_num <= 52.
-    plot_type: 'toronto' or 'world'
+    Args:
+        ds (xr.Dataset): TROPOMI NO2 dataset.
+        week_num (int): calendar week; 1 <= week_num <= 52
+        res (float): resolution of spacing. Default: 0.05 ~ 6km.
+        plot_type (str): specification of plot type. Must be 'world'
+            or 'toronto'
+    Returns:
+        new_ds (xr.Dataset): TROPOMI NO2 dataset aggregated into a 
+            uniform lat/lon grid.
     """
 
     # Define boundaries depending on if plot_type is 'world' or 'toronto'
@@ -34,6 +46,8 @@ def aggregate_tropomi(ds, week_num, res=0.05, plot_type='toronto'):
         bbox = (-180, 180, -90, 90)
     elif plot_type == 'toronto':
         bbox = poi.plot_limits
+    else:
+        raise ValueError('plot_type must be \'toronto\' or \'world\'')
 
     # lat/lon max/min
     lonmn, lonmx, latmn, latmx = bbox
@@ -116,12 +130,15 @@ def check_valid(ds, week_num_range):
     Check if dataset ds has data for the valid range of week numbers defined by
     week_num_range.
 
-    ds: xr.Dataset
-    week_num_range: [week_num_start, week_num_end]
-    week_num start and week_num_end must be odd and even, respectively. 
-    
-    Return boolean if week number of ds is in the week_num_range.
+    ds (xr.Dataset): xr.Dataset
+    week_num_range (list of int): [week_num_start, week_num_end]
+        week_num start and week_num_end must be odd and even, 
+        respectively. 
+
+    Returns:
+        Boolean if week number of ds is in the week_num_range.
     """
+
     week_one, week_two = week_num_range
     if (week_one % 2 != 1) or (week_two % 2 != 0) or (week_two - week_one != 1):
         return ValueError('First entry of week_num_range must be an odd int, \
@@ -129,11 +146,12 @@ def check_valid(ds, week_num_range):
                 first and second entry must be 1.')
 
     ds_week = pd.to_datetime(ds.time.data).week
-    
+
     if (week_one <= ds_week) and (ds_week <= week_two):
         return True
     else:
         return False
+
 
 if __name__ == '__main__':
     # f='/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200502T080302_20200502T094432_13222_01_010302_20200504T005011.nc'
