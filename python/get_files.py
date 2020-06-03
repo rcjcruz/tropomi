@@ -8,7 +8,7 @@ Script containing functions:
     - get_start_and_end_date_from_calendar_week(year, calendar_week)
     - get_files(**kwargs)
     
-Get files creates text file inventory.txt for all .nc files which fall
+Get files creates text file two_week_inventory.txt for all .nc files which fall
 within a two-week period. 
 """
 
@@ -21,6 +21,7 @@ from glob import glob
 import os
 import sys
 import textwrap
+from paths import *
 
 ######################
 
@@ -100,29 +101,32 @@ def get_files(**kwargs):
         calendar_week (int): calendar week of interest; 1 <= calendar_week <= 52
 
     Returns:
-        .txt file with glob strings for .nc files found in week range given
+        .txt file with strings of dates for orbits found in week range given
         date.
     """
 
     # year, month, day format
     if ('year' in kwargs) and ('month' in kwargs) and ('day' in kwargs):
+        year, month, day = kwargs['year'], kwargs['month'], kwargs['day']
+
         # Get week number for date
-        calendar_week = get_odd_week_number(
-            kwargs['year'], kwargs['month'], kwargs['day'])
+        calendar_week = get_odd_week_number(year, month, day)
 
         # Load start and end date of two week range
         start, end = get_start_and_end_date_from_calendar_week(
-            kwargs['year'], calendar_week)
+            year, calendar_week)
 
     # year, calendar_week format
     elif ('year' in kwargs) and ('calendar_week' in kwargs):
-        calendar_week = kwargs['calendar_week']
+        year, calendar_week = kwargs['year'], kwargs['calendar_week']
 
-        if int(kwargs['calendar_week']) % 2 == 0:
-            return ValueError('Calendar week must be odd.')
-        else:
-            start, end = get_start_and_end_date_from_calendar_week(
-                kwargs['year'], kwargs['calendar_week'])
+        if calendar_week % 2 == 0:
+            print('--- Calendar week must be odd. '
+                  'Subtracted 1 from calendar week and continued processing. ---')
+            calendar_week -= 1
+
+        start, end = get_start_and_end_date_from_calendar_week(
+            year, calendar_week)
 
     # raise error if not a valid kwargs combination
     else:
@@ -131,45 +135,41 @@ def get_files(**kwargs):
                             - year, month, day
                             - year, calendar_week""")))
 
-    toronto_files = 'toronto_inventory.txt'
-    output_file = "inventory.txt"  # file to save the results
-    
-    # Open Toronto files to read
+    # Naming the inventory .txt file
+    output_file = "inventory_{}_W{}_{}.txt".format(year, calendar_week,
+                                                   (calendar_week + 1))  # file to save the results
+    output_fpath = os.path.join(inventories, output_file)
+
+    # If file exists, remove it, otherwise, create a new file
     try:
-        file_list = open(toronto_files, 'r')
-    except:
-        print('Did not find a text file containing files with Toronto orbits (perhaps name does not match)')
-        sys.exit()
+        os.remove(output_fpath)
+    except OSError:
+        pass
 
-    # If text file is not empty, erase it
-    if os.path.getsize(output_file) > 0:
-        open(output_file, 'w').close()
+    with open(output_fpath, "w+") as file_object:
+        # Iterate over the files in the tropomi_gta/pkl directory and append them
+        # to the inventory
+        fpath = os.path.join(tropomi_pkl, '*')
 
-    # Open the text file
-    file_object = open(output_file, "w+")
+        for file in glob(fpath):
+            # Find date of .nc file and convert to datetime object
+            date = pd.to_datetime(file[-8:], format='%Y%m%d', errors='ignore')
 
-    # Iterate over the files in the no2 directory and append them to the list
-    # for file in glob('/export/data/scratch/tropomi/no2/*.nc'):
-    for file in file_list:
-        date_str = file.strip()[53:61]
-
-        # Find date of .nc file and convert to datetime object
-        date = pd.to_datetime(date_str, format='%Y%m%d', errors='ignore')
-
-        # Write .nc file to txt file if found between start and end and the
-        # date of observation is not already written in the text file
-        if start <= date <= end:
-            file_name = '*__%s*_*.nc' % (date_str)
-            file_object.seek(0)  # return to top of the text file
-            if file_name not in file_object.read():
-                file_object.writelines([file_name, '\n'])
-                print('Added ', date)
-            else:
-                pass
-    file_object.close()
-
-    print('Created inventory.txt file containing .nc files '
-          'for week {}, {} to {}'.format(calendar_week, start, end))
+            # Write file to txt file if found between start and end and the
+            # date of observation is not already written in the text file
+            if start <= date <= end:
+                file_name = file[-8:]
+                file_object.seek(0)  # return to top of the text file
+                if file_name not in file_object.read():
+                    file_object.writelines([file_name, '\n'])
+                    print('Added ', date)
+                else:
+                    pass
+                
+    # Print statement upon completion
+    print('Created {} containing .nc files '
+          'for weeks {} & {}, {} to {}'.format(output_file, calendar_week,
+                                               (calendar_week + 1), start, end))
 
     return start, end, calendar_week
 
@@ -177,6 +177,6 @@ def get_files(**kwargs):
 
 
 if __name__ == '__main__':
-    start, end, calendar_week = get_files(year=2020, calendar_week=19)
+    start, end, calendar_week = get_files(year=2020, calendar_week=18)
 
     # get_files(year=2020, month=1)

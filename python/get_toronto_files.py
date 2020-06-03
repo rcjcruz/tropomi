@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Usage: get_toronto_files.py
+
+Script contains functions:
+    - get_toronto_files(f)
+
+Return a text file toronto_inventory.txt which contains all .nc files 
+in /export/data/scratch/tropomi/no2 directory which contain an orbit over 
+Toronto. An orbit over Toronto is defined as passing over 
+79.3832 +-5 W, 43.6532 +-5 N.
+"""
 
 import os
 import glob
@@ -7,6 +18,7 @@ import sys
 import xarray as xr
 import time
 from collections import namedtuple
+from paths import *
 
 # fpath = "/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200505T171512_20200505T185642_13270_01_010302_20200507T092201.nc"
 # fpath = "/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200505T070610_20200505T084741_13264_01_010302_20200507T000819.nc"
@@ -34,13 +46,16 @@ def get_toronto_files(f):
 
     # Load output file
     output_file = 'toronto_inventory.txt'
+    output_fpath = os.path.join(inventories, output_file)
+    
+    # Remove file if it already exists
+    try:
+        os.remove(output_fpath)
+    except OSError:
+        pass
 
-    # Create text file of Toronto inventory or empties it if it has contents
-    if os.path.getsize(output_file) > 0:
-        open(output_file, 'w').close()
-
-    # Open the text file to write
-    file_object = open(output_file, "w+")
+    # Open the text file
+    file_object = open(output_fpath, "w+")
 
     # Keep track of start time of proeess
     start_time = time.time()

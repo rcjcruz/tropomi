@@ -22,6 +22,7 @@ import datetime
 import sys
 import get_files as gf
 from datetime import timedelta
+from paths import *
 
 # Suppress warnings
 import warnings
@@ -56,19 +57,17 @@ def dsread(f):
     f (glob string): file name.
     """
     
-    fdir = '/export/data/scratch/tropomi/no2/'
+    fdir = tropomi_no2
     fpath = os.path.join(fdir, f)
     
     print('Reading ', f)
     # Load NO2 and qa_value
     ds = xr.open_mfdataset(fpath, group='PRODUCT',
                            concat_dim='scanline',
-                           parallel=True,
                            preprocess=dsmod)
     # Load latitude_bounds and longitude_bounds
     bds = xr.open_mfdataset(fpath, group='/PRODUCT/SUPPORT_DATA/GEOLOCATIONS',
-                       concat_dim='scanline',
-                       parallel=True).squeeze('time')
+                       concat_dim='scanline').squeeze('time')
     
     # Assign lat/lon bounds from bds to data variables in ds
     ds = ds.assign(latitude_bounds = bds['latitude_bounds'])
