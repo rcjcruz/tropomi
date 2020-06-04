@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -19,6 +20,7 @@ import time
 import pickle
 import _pickle as cPickle
 import fnmatch
+import glob
 # import pprint
 # import bz2 # for compressing 
 
@@ -107,27 +109,35 @@ def pickle_files(f):
     start_time = time.time()
     fdir = tropomi_pkl  # directory to store pickle files
     i = 1  # counter
+    
+    # Get list of pkl files
+    fpath = os.path.join(fdir, '*')
+    pkl_list = sorted(glob.glob(fpath))
+    date_list = []
+    for file in pkl_list:
+        date_list.append(file[-8:]) 
 
     for date in dates:
-        start_time_iter = time.time()
+        if date not in date_list:
+            start_time_iter = time.time()
 
-        f = '*__%s*.nc' % date
+            f = '*__%s*.nc' % date
 
-        # Read all .nc files for a date into a xr.DataArray
-        ds = ot.dsread(f)
+            # Read all .nc files for a date into a xr.DataArray
+            ds = ot.dsread(f)
 
-        output_file = os.path.join(fdir, date)
-        # Pickle files
-        # with bz2.BZ2File(output_file + '.pbz2', 'w') as outfile:
-        #     print('Pickling %s' % date)
-        #     cPickle.dump(ds, outfile)
-        with open(output_file, 'wb') as outfile:
-            print('Pickling %s' % date)
-            pickle.dump(ds, outfile)
+            output_file = os.path.join(fdir, date)
+            # Pickle files
+            # with bz2.BZ2File(output_file + '.pbz2', 'w') as outfile:
+            #     print('Pickling %s' % date)
+            #     cPickle.dump(ds, outfile)
+            with open(output_file, 'wb') as outfile:
+                print('Pickling %s' % date)
+                pickle.dump(ds, outfile)
 
-        print("[%s] --- %s seconds ---" % (i, (time.time() - start_time_iter)))
+            print("[%s] --- %s seconds ---" % (i, (time.time() - start_time_iter)))
 
-        i += 1
+            i += 1
 
     end_time = time.time()
     hours, rem = divmod(end_time - start_time, 3600)

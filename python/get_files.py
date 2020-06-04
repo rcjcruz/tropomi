@@ -136,7 +136,7 @@ def get_files(**kwargs):
                             - year, calendar_week""")))
 
     # Naming the inventory .txt file
-    output_file = "inventory_{}_W{}_{}.txt".format(year, calendar_week,
+    output_file = "inventory_{}_W{:02d}_{:02d}.txt".format(year, calendar_week,
                                                    (calendar_week + 1))  # file to save the results
     output_fpath = os.path.join(inventories, output_file)
 
@@ -161,7 +161,7 @@ def get_files(**kwargs):
                     pass
                 
     # Print statement upon completion
-    print('Created {} containing .nc files '
+    print('Created {} containing pkl files '
           'for weeks {} & {}, {} to {}'.format(output_file, calendar_week,
                                                (calendar_week + 1), start, end))
 
@@ -171,6 +171,18 @@ def get_files(**kwargs):
 
 
 if __name__ == '__main__':
-    start, end, calendar_week = get_files(year=2020, calendar_week=19)
+    # create inventory text file for every couple weeks
+    for i in range(2018, 2021):
+        for j in range(1, 52, 2):
+            
+            start, end, calendar_week = get_files(year=i, calendar_week=j)
+            
+    # delete empty files
+    inv_list = glob(os.path.join(inventories, '*'))
+    for inv in inv_list:
+        if os.path.getsize(inv) == 0:
+            print('{} is empty and was deleted.'.format(inv))
+            os.remove(inv)
+        
 
     # get_files(year=2020, month=1)
