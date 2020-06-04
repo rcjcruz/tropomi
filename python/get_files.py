@@ -140,12 +140,6 @@ def get_files(**kwargs):
                                                    (calendar_week + 1))  # file to save the results
     output_fpath = os.path.join(inventories, output_file)
 
-    # If file exists, remove it, otherwise, create a new file
-    try:
-        os.remove(output_fpath)
-    except OSError:
-        pass
-
     with open(output_fpath, "w+") as file_object:
         # Iterate over the files in the tropomi_gta/pkl directory and append them
         # to the inventory
@@ -177,6 +171,6 @@ def get_files(**kwargs):
 
 
 if __name__ == '__main__':
-    start, end, calendar_week = get_files(year=2020, calendar_week=18)
+    start, end, calendar_week = get_files(year=2020, calendar_week=19)
 
     # get_files(year=2020, month=1)

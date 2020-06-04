@@ -108,7 +108,7 @@ def pickle_files(f):
     fdir = tropomi_pkl  # directory to store pickle files
     i = 1  # counter
 
-    for date in dates[-10:]:
+    for date in dates:
         start_time_iter = time.time()
 
         f = '*__%s*.nc' % date
