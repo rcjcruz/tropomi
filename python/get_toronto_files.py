@@ -28,6 +28,15 @@ from paths import *
 
 
 def get_toronto_files(f, append_new=False):
+    """
+    Return .txt file containing .nc files with orbits over Toronto given 
+    file f. If .txt file exists, load append_new=True to append new files.
+    
+    Args:
+        f (str): file name of TROPOMI NO2 .nc files.
+        append_new (bool): if True, only append new files not found in existing
+            .txt file. Default: False.
+    """
 
     # Load path to NO2 files
     fdir = tropomi_no2

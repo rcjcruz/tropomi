@@ -16,6 +16,10 @@ Averaged values are found in val_arr_mean array
 import open_tropomi as ot
 import grid_tropomi as gt
 import points_of_interest as poi
+from paths import *
+import os
+import glob
+import pickle
 import numpy as np
 import xarray as xr
 import datetime as dt
@@ -41,80 +45,59 @@ GeoAxes._pcolormesh_patched = Axes.pcolormesh
 
 #############################
 
-
-def plot_tropomi(ds, res, plot_type='toronto'):
+def plot_tropomi(ds):
     """
     Return a Cartopy plot of averaged TROPOMI data ds.  
 
     plot_type: 'toronto' or 'world'
     """
-
-    # # Aggregate data
-    # ds = gt.aggregate_tropomi(ds, res, plot_type)
-
-    # Create figure and axes
-    if plot_type == 'world':
-        fig, ax = plt.subplots(figsize=(12, 8))
-    elif plot_type == 'toronto':
-        fig, ax = plt.subplots(figsize=(12, 10))
-    else:
-        return ValueError('plot_type must be \'toronto\' or \'world\'')
+    fig, ax = plt.subplots(figsize=(12, 10))
     fig.tight_layout
     ax = plt.axes(projection=ccrs.PlateCarree())
 
     # Load date
-    date = str(ds.time.data[0]).split('T')[0]
+    start = str(ds.attrs['first day'].date())
+    end = str(ds.attrs['last day'].date())
+    weeks = ds.attrs['weeks']
+    year = ds.attrs['year']
 
-    if plot_type == 'toronto':
-        ax.text(0, 1.07,
-                r"NO$_2$ troposheric vertical column",
-                fontsize=18,
-                transform=ax.transAxes)
-        ax.text(0, 1.02,
-                r"Toronto, Canada, {}".format(date),
-                fontsize=14,
-                transform=ax.transAxes)
+    date_str = 'weeks {}, {} to {}'.format(weeks, start, end)
+    ax.text(0, 1.07,
+            r"NO$_2$ troposheric vertical column",
+            fontsize=18,
+            transform=ax.transAxes)
+    ax.text(0, 1.02,
+            r"Toronto, Canada, {}".format(date_str),
+            fontsize=14,
+            transform=ax.transAxes)
 
-        # set map to plot within plot_limits
-        ax.set_extent(poi.plot_limits)
+    # set map to plot within plot_limits
+    ax.set_extent(poi.plot_limits)
 
-        # Plot cities of interest
-        for city in poi.cities_coords.keys():
-            city_name = city[:-7]
-            ax.plot(poi.cities_coords[city].lon,
-                    poi.cities_coords[city].lat,
-                    marker='*',
-                    markeredgewidth=2,
-                    markeredgecolor='black',
-                    markerfacecolor='black',
-                    markersize=5)
-            if city_name == 'Montreal':
-                ax.text(poi.cities_coords[city].lon + 0.3,
-                        poi.cities_coords[city].lat + 0.5,
-                        city_name,
-                        bbox=dict(facecolor='wheat',
-                                  edgecolor='black', boxstyle='round'),
-                        transform=ccrs.Geodetic())
-            else:
-                ax.text(poi.cities_coords[city].lon - 1,
-                        poi.cities_coords[city].lat + 0.5,
-                        city_name,
-                        bbox=dict(facecolor='wheat',
-                                  edgecolor='black', boxstyle='round'),
-                        transform=ccrs.Geodetic())
-
-    elif plot_type == 'world':
-        ax.text(0, 1.10,
-                r"NO$_2$ tropospheric vertical column",
-                fontsize=18,
-                transform=ax.transAxes)
-        ax.text(0, 1.04,
-                r"{}".format(date),
-                fontsize=14,
-                transform=ax.transAxes)
-
-        # set map to zoom out as much as possible
-        ax.set_global()
+    # Plot cities of interest
+    for city in poi.cities_coords.keys():
+        city_name = city[:-7]
+        ax.plot(poi.cities_coords[city].lon,
+                poi.cities_coords[city].lat,
+                marker='*',
+                markeredgewidth=2,
+                markeredgecolor='black',
+                markerfacecolor='black',
+                markersize=5)
+        if city_name == 'Montreal':
+            ax.text(poi.cities_coords[city].lon + 0.3,
+                    poi.cities_coords[city].lat + 0.5,
+                    city_name,
+                    bbox=dict(facecolor='wheat',
+                              edgecolor='black', boxstyle='round'),
+                    transform=ccrs.Geodetic())
+        else:
+            ax.text(poi.cities_coords[city].lon + 0.1,
+                    poi.cities_coords[city].lat + 0.2,
+                    city_name,
+                    bbox=dict(facecolor='wheat',
+                              edgecolor='black', boxstyle='round'),
+                    transform=ccrs.Geodetic())
 
     # set 0 values to np.nan
     ds = ds.where(ds > 0, np.nan)
@@ -136,16 +119,10 @@ def plot_tropomi(ds, res, plot_type='toronto'):
     ax.set_title('')
 
     # set colorbar properties
-    if plot_type == 'world':
-        cbar_ax = fig.add_axes([0.38, 0.05, 0.25, 0.01])
-        cbar = plt.colorbar(im, cax=cbar_ax, orientation='horizontal')
-        cbar.set_label(r"$\log$(NO$_2)$ (mol/m$^2$)", labelpad=30, fontsize=14)
-        cbar.outline.set_visible(False)
-    elif plot_type == 'toronto':
-        cbar_ax = fig.add_axes([0.85, 0.2, 0.01, 0.6])
-        cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
-        cbar.set_label(r"$\log$(NO$_2)$ (mol/m$^2$)", labelpad=30, fontsize=14)
-        cbar.outline.set_visible(False)
+    cbar_ax = fig.add_axes([0.85, 0.2, 0.01, 0.6])
+    cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
+    cbar.set_label(r"$\log$(NO$_2)$ (mol/m$^2$)", labelpad=30, fontsize=14)
+    cbar.outline.set_visible(False)
 
     # Define Natural Earth features
     countries = cfeature.NaturalEarthFeature(
@@ -154,24 +131,22 @@ def plot_tropomi(ds, res, plot_type='toronto'):
         scale='10m',
         facecolor='none')
 
+    states_provinces = cfeature.NaturalEarthFeature(
+        category='cultural',
+        name='admin_1_states_provinces_lines',
+        scale='10m',
+        facecolor='none')
+
+    lakes_50m = cfeature.NaturalEarthFeature(
+        category='physical',
+        name='lakes',
+        scale='10m',
+        facecolor='none')
+
     ax.add_feature(countries, edgecolor='black')
     ax.add_feature(cfeature.COASTLINE)
-
-    if plot_type == 'toronto':
-        states_provinces = cfeature.NaturalEarthFeature(
-            category='cultural',
-            name='admin_1_states_provinces_lines',
-            scale='10m',
-            facecolor='none')
-
-        lakes_50m = cfeature.NaturalEarthFeature(
-            category='physical',
-            name='lakes',
-            scale='10m',
-            facecolor='none')
-
-        ax.add_feature(states_provinces, edgecolor='gray')
-        # ax.add_feature(lakes_50m, edgecolor='blue')
+    ax.add_feature(states_provinces, edgecolor='gray')
+    # ax.add_feature(lakes_50m, edgecolor='blue')
 
     # Add gridlines
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -182,23 +157,20 @@ def plot_tropomi(ds, res, plot_type='toronto'):
     gl.yformatter = LATITUDE_FORMATTER
 
     # Show plot
-    plt.show()
+    # plt.show()
 
     # Save data to world_figures to toronto_figures with the time
     # of processing appended to the file name
     # ONLY runs if plot_tropomi.py is run directly
     if __name__ == '__main__':
-        is_save = str(
-            input('Do you want to save a png of this plot? \n (Y/N)'))
-        if is_save == 'Y' or is_save == 'y':
-            if (plot_type == 'world'):
-                pngfile = '{0}.png'.format(
-                    '../world_figures/WOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
-            elif (plot_type == 'toronto'):
-                pngfile = '{0}.png'.format(
-                    '../toronto_figures/TOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
+        # is_save = str(
+        #     input('Do you want to save a png of this plot? \n (Y/N)'))
+        # if is_save == 'Y' or is_save == 'y':
+        print('Saving png for {}, weeks {}'.format(ds.attrs['year'], ds.attrs['weeks']))
+        pngfile = '{0}.png'.format(
+            '../toronto_figures/TOR_{}_W{}_{}'.format(year, weeks, dt.datetime.now().strftime('_%Y%m%dT%H%M%S')))
 
-            fig.savefig(pngfile, dpi=300)
+        fig.savefig(pngfile, dpi=300)
 
 #############################
 
@@ -212,21 +184,14 @@ def plot_tropomi(ds, res, plot_type='toronto'):
 #     return monday, monday + datetime.timedelta(days=13.9)
 
 
-if __name__ == '__main__':
-    # # # f = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200502T080302_20200502T094432_13222_01_010302_20200504T005011.nc'
-    # s = ['*__20200501*_*.nc',
-    #      '*__20200502*_*.nc',
-    #      '*__20200503*_*.nc',
-    #      '*__20200504*_*.nc',
-    #      '*__20200505*_*.nc']
-    # # s = ['*__20200505*_*.nc']
-    # for f in s:
-    f = '*__20200505*_*.nc'
-    g = '*__20200504*_*.nc'
-    ds1 = gt.aggregate_tropomi(ot.dsread(f))
-    ds2 = gt.aggregate_tropomi(ot.dsread(g))
+# if __name__ == '__main__':
+#     f =
+#     plot_tropomi(f)
 
-    # join data
-    ds = xr.concat([ds1, ds2], dim='time')
-    # ds = gt.aggregate_tropomi(ds=ds, res=0.5)
-    plot_tropomi(ds=ds, plot_type='toronto', res=0.05)
+if __name__ == '__main__':
+    input_files = os.path.join(tropomi_pkl_week, '*')
+    for test_file in sorted(glob.glob(input_files)):   
+        infile = open(test_file, 'rb')
+        ds = pickle.load(infile)
+        infile.close()
+        plot_tropomi(ds)
