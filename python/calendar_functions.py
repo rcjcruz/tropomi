@@ -39,8 +39,6 @@ def get_odd_week_number(year, month, day):
     d = date.week
     if d % 2 == 0:
         d -= 1
-    if d == 53:
-        d = 1
     return d
 
 ######################

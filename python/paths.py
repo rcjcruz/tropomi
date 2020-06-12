@@ -10,5 +10,5 @@ import os
 
 inventories = '../inventories/'
 tropomi_no2 = '/export/data/scratch/tropomi/no2/'
-tropomi_pkl = '/export/data/scratch/tropomi_gta/day_pkl'
-tropomi_pkl_week = '/export/data/scratch/tropomi_gta/week_pkl'
+tropomi_pkl = '/export/data/scratch/tropomi_rc/toronto/day_pkl'
+tropomi_pkl_week = '/export/data/scratch/tropomi_rc/toronto/week_pkl'

@@ -26,6 +26,7 @@ import datetime as dt
 import pandas as pd
 import time
 import datetime
+import simplekml
 from datetime import timedelta
 from collections import namedtuple
 
@@ -42,8 +43,6 @@ from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from cartopy.mpl.geoaxes import GeoAxes
 GeoAxes._pcolormesh_patched = Axes.pcolormesh
-
-#############################
 
 def plot_tropomi(ds):
     """
@@ -84,36 +83,29 @@ def plot_tropomi(ds):
                 markeredgecolor='black',
                 markerfacecolor='black',
                 markersize=5)
-        if city_name == 'Montreal':
-            ax.text(poi.cities_coords[city].lon + 0.3,
-                    poi.cities_coords[city].lat + 0.5,
-                    city_name,
-                    bbox=dict(facecolor='wheat',
-                              edgecolor='black', boxstyle='round'),
-                    transform=ccrs.Geodetic())
-        else:
-            ax.text(poi.cities_coords[city].lon + 0.1,
-                    poi.cities_coords[city].lat + 0.2,
-                    city_name,
-                    bbox=dict(facecolor='wheat',
-                              edgecolor='black', boxstyle='round'),
-                    transform=ccrs.Geodetic())
+        ax.text(poi.cities_coords[city].lon + 0.1,
+                poi.cities_coords[city].lat + 0.2,
+                city_name,
+                bbox=dict(facecolor='wheat',
+                          edgecolor='black', boxstyle='round'),
+                transform=ccrs.Geodetic())
 
     # set 0 values to np.nan
     ds = ds.where(ds > 0, np.nan)
 
     # plot averaged values
-    im = ds.isel(time=0).plot.imshow(ax=ax,
-                                     transform=ccrs.PlateCarree(),
-                                     infer_intervals=True,
-                                     cmap='viridis',
-                                     vmin=10e-6,
-                                     vmax=6e-5,
-                                     norm=LogNorm(),
-                                     robust=True,
-                                     x='longitude',
-                                     y='latitude',
-                                     add_colorbar=False)
+    im = ds.isel(time=0).plot.pcolormesh(ax=ax,
+                                         transform=ccrs.PlateCarree(),
+                                         infer_intervals=True,
+                                         cmap='viridis',
+                                         vmin=10e-6,
+                                         vmax=6e-5,
+                                         norm=LogNorm(),
+                                         robust=True,
+                                         x='longitude',
+                                         y='latitude',
+                                         add_colorbar=False)
+    colors = im.cmap(im.norm(im.get_array()))
 
     # remove default title
     ax.set_title('')
@@ -157,20 +149,22 @@ def plot_tropomi(ds):
     gl.yformatter = LATITUDE_FORMATTER
 
     # Show plot
-    # plt.show()
+    plt.show()
 
     # Save data to world_figures to toronto_figures with the time
     # of processing appended to the file name
     # ONLY runs if plot_tropomi.py is run directly
     if __name__ == '__main__':
-        # is_save = str(
-        #     input('Do you want to save a png of this plot? \n (Y/N)'))
-        # if is_save == 'Y' or is_save == 'y':
-        print('Saving png for {}, weeks {}'.format(ds.attrs['year'], ds.attrs['weeks']))
-        pngfile = '{0}.png'.format(
-            '../toronto_figures/TOR_{}_W{}_{}'.format(year, weeks, dt.datetime.now().strftime('_%Y%m%dT%H%M%S')))
+        is_save = str(
+            input('Do you want to save a png and KML of this plot? \n (Y/N)'))
+        if is_save == 'Y' or is_save == 'y':
+            print('Saving png for {}, weeks {}'.format(
+                ds.attrs['year'], ds.attrs['weeks']))
+            pngfile = '{0}.png'.format(
+                '../toronto_figures/TOR_{}_W{}_{}'.format(year, weeks, dt.datetime.now().strftime('_%Y%m%dT%H%M%S')))
 
-        fig.savefig(pngfile, dpi=300)
+            fig.savefig(pngfile, dpi=300)
+    return im 
 
 #############################
 
@@ -189,9 +183,9 @@ def plot_tropomi(ds):
 #     plot_tropomi(f)
 
 if __name__ == '__main__':
-    input_files = os.path.join(tropomi_pkl_week, '*')
-    for test_file in sorted(glob.glob(input_files)):   
+    input_files = os.path.join(tropomi_pkl_week, '2020_W21*')
+    for test_file in sorted(glob.glob(input_files)):
         infile = open(test_file, 'rb')
         ds = pickle.load(infile)
         infile.close()
-        plot_tropomi(ds)
+        im = plot_tropomi(ds)

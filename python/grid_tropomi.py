@@ -152,7 +152,7 @@ def aggregate_tropomi(f, res=0.05):
     first, last = dict_keys[0], dict_keys[-1]
     monday = pd.to_datetime(first)
     sunday = pd.to_datetime(last)
-    week_num = cf.get_odd_week_number(year, monday.month, monday.day)
+    week_num = cf.get_odd_week_number(monday.year, monday.month, monday.day)
     
     date = str(year) + ', weeks ' + \
         str(week_num) + ' to ' + str(week_num + 1)
