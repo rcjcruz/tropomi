@@ -15,18 +15,32 @@ import calendar_functions as cf
 # Open the inventory for the two-weeks of interest
 
 
-def create_dict(f):
+def create_dict(f, aggregate='weekly', city='toronto'):
     """
     Return dictionary containing datasets of all files found in inventory f.
 
     Args:
         f (str): file name containing datasets for two-week range.
+        aggregate (str): aggregation type. Accepted values: 'monthly', 'weekly'
+            Default: 'weekly'
+        city (str): city of interest. Default: 'toronto'. Accepted values:
+            'los_angeles', 'montreal', 'los_angeles', 'toronto', 'vancouver'.
     Returns:
         files_dict (dict): dictionary containing datasets with date of 
             orbit as key.
-    """
 
-    fdir = inventories
+    >>> f = 'inventory_2020_W01_02.txt'
+    >>> files_dict = create_dict(f)
+    """
+    fdir = inventories + city + '/'
+
+    if aggregate == 'weekly':
+        fdir += 'week/'
+    elif aggregate == 'monthly':
+        fdir += 'month/'
+    else:
+        return ValueError('Acceptable aggregate values are: "monthly", "weekly"')
+
     try:
         fpath = os.path.join(fdir, f)
         files = []
@@ -46,7 +60,7 @@ def create_dict(f):
     # FUTURE: Make a pkl file for each dataset
     files_dict = {}
     for file in files:
-        pkl_path = os.path.join(tropomi_pkl, file)
+        pkl_path = os.path.join(tropomi_pkl_day, '{}/{}'.format(city, file))
         with open(pkl_path, 'rb') as infile:
             ds = pickle.load(infile)
             files_dict[file] = ds
@@ -58,7 +72,7 @@ def create_dict(f):
 # # week1920_ds = xr.concat(list(files_dict.values()), dim='time')
 
 
-def aggregate_tropomi(f, res=0.05):
+def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
     """
     Return a xr.DataArray with averaged NO2 product aggregated over a uniform
     lat/lon grid with bounds defined by poi.plot_limits and resolution res.
@@ -66,6 +80,10 @@ def aggregate_tropomi(f, res=0.05):
     Args:
         f (str): file name containing datasets for two-week range.
         res (float): resolution of spacing. Default: 0.05 ~ 6km.
+        aggregate (str): aggregation type. Accepted values: 'monthly', 'weekly'
+            Default: 'weekly'
+        city (str): city of interest. Default: 'toronto'. Accepted values:
+            'los_angeles', 'montreal', 'los_angeles', 'toronto', 'vancouver'.
     Returns:
         new_ds (xr.Dataset): TROPOMI NO2 dataset aggregated into a 
             uniform lat/lon grid.
@@ -73,7 +91,14 @@ def aggregate_tropomi(f, res=0.05):
     start_time = time.time()
 
     # Lat/lon max/min
-    lonmn, lonmx, latmn, latmx = poi.plot_limits
+    extent = 1
+    city_coords = poi.cities[city]
+    plot_limits = (city_coords.lon-extent,
+                   city_coords.lon+extent,
+                   city_coords.lat-extent,
+                   city_coords.lat+extent)
+
+    lonmn, lonmx, latmn, latmx = plot_limits
 
     # Create a uniform lat/lon grid
     lat_bnds = np.arange(latmn, latmx, res)
@@ -85,11 +110,11 @@ def aggregate_tropomi(f, res=0.05):
     dens_arr = np.zeros([lat_bnds.size, lon_bnds.size], dtype=np.int32)
 
     # Load files into dictionary
-    year = int(f[25:29])
-    ds_dict = create_dict(f)
+    year = int(f[:4])
+    ds_dict = create_dict(f, aggregate=aggregate, city=city)
 
-    # Iterate over each date in two-week range and add values to val_arr and
-    # dens_arr
+    # Iterate over each date in two-week or monthly range and add values to
+    # val_arr and dens_arr
     j = 1
     for date in list(ds_dict.keys()):
         print('[{}] Aggregating {}'.format(j, date))
@@ -149,31 +174,50 @@ def aggregate_tropomi(f, res=0.05):
 
     # Load week of orbit; will need to update when I work with multiple day
     dict_keys = sorted(list(ds_dict.keys()))
-    first, last = dict_keys[0], dict_keys[-1]
-    monday = pd.to_datetime(first)
-    sunday = pd.to_datetime(last)
-    week_num = cf.get_odd_week_number(monday.year, monday.month, monday.day)
-    
-    date = str(year) + ', weeks ' + \
-        str(week_num) + ' to ' + str(week_num + 1)
+    first, last = pd.to_datetime(dict_keys[0]), pd.to_datetime(dict_keys[-1])
 
-    # Create a new DataArray where each averaged value corresponds to
-    # lat/lon values that will be plotted on a PlateCarree projection
-    new_ds = xr.DataArray(np.array([val_arr_mean]),
-                          dims=('time', 'latitude', 'longitude'),
-                          coords={'time': np.array([date]),
-                                  'latitude': lat_bnds,
-                                  'longitude': lon_bnds},
-                          attrs={'weeks': '{:02d}-{:02d}'.format(week_num, week_num + 1),
-                                 'first day': monday,
-                                 'last day': sunday,
-                                 'year': year})
+    if aggregate == 'weekly':
+        week_num = cf.get_odd_week_number(
+            first.year, first.month, first.day)
 
-    # Pickle new ds
-    output_file = '{}_W{:02d}_{:02d}'.format(
-        year, week_num, week_num + 1)
-    pkl_path = os.path.join(tropomi_pkl_week, output_file)
-    print(pkl_path)
+        date = str(year) + ', weeks ' + \
+            str(week_num) + ' to ' + str(week_num + 1)
+
+        # Create a new DataArray where each averaged value corresponds to
+        # lat/lon values that will be plotted on a PlateCarree projection
+        new_ds = xr.DataArray(np.array([val_arr_mean]),
+                              dims=('time', 'latitude', 'longitude'),
+                              coords={'time': np.array([date]),
+                                      'latitude': lat_bnds,
+                                      'longitude': lon_bnds},
+                              attrs={'weeks': '{:02d}-{:02d}'.format(week_num, week_num + 1),
+                                     'first day': first,
+                                     'last day': last,
+                                     'year': year})
+
+        # Pickle new ds
+        output_file = '{}/{}_W{:02d}_{:02d}'.format(city, year, week_num,
+                                                    week_num + 1)
+        pkl_path = os.path.join(tropomi_pkl_week, output_file)
+        print(pkl_path)
+
+    elif aggregate == 'monthly':
+        # Create a new DataArray where each averaged value corresponds to
+        # lat/lon values that will be plotted on a PlateCarree projection
+        new_ds = xr.DataArray(np.array([val_arr_mean]),
+                              dims=('time', 'latitude', 'longitude'),
+                              coords={'time': np.array([date]),
+                                      'latitude': lat_bnds,
+                                      'longitude': lon_bnds},
+                              attrs={'month': first.month,
+                                     'first day': first,
+                                     'last day': last,
+                                     'year': year})
+
+        # Pickle new ds
+        output_file = '{}/{}_M{:02d}'.format(city, year, first.month)
+        pkl_path = os.path.join(tropomi_pkl_month, output_file)
+        print(pkl_path)
 
     with open(pkl_path, 'wb') as outfile:
         pickle.dump(new_ds, outfile)
@@ -191,14 +235,12 @@ def aggregate_tropomi(f, res=0.05):
 
 
 if __name__ == '__main__':
-    # f = 'inventory_2020_W01_02.txt'
-    # # files_dict = create_dict(f)
-    # ds = aggregate_tropomi(f)
-
-
-# # to create pkl files for every two week range dict
-    for i in range(1, 10, 2):
-        fpath = os.path.join(inventories, '*W0{}*'.format(i))
-        files = glob.glob(fpath)
-        for test_file in files:
-            ds=aggregate_tropomi(test_file)
+    f = '2020_M05.txt'
+    # files_dict = create_dict(f, aggregate='monthly', city='new_york')
+    ds = aggregate_tropomi(f, aggregate='monthly', city='toronto')
+    # # to create pkl files for every two week range dict
+    # for i in range(1, 10, 2):
+    #     fpath = os.path.join(inventories, '*W0{}*'.format(i))
+    #     files = glob.glob(fpath)
+    #     for test_file in files:
+    #         ds = aggregate_tropomi(test_file)

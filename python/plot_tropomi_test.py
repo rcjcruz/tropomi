@@ -32,30 +32,29 @@ from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1.colorbar import colorbar
 
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from cartopy.feature import NaturalEarthFeature
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-from cartopy.mpl.geoaxes import GeoAxes
-GeoAxes._pcolormesh_patched = Axes.pcolormesh
-
 
 def make_kml(llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat,
              figs, colorbar=None, **kw):
     """TODO: LatLon bbox, list of figs, optional colorbar figure,
-    and several simplekml kw..."""
-
+    and several simplekml kw...
+    """
+    
+    # Initiatlize KML file and remove altitude, roll, tilt, and altitudemode
+    # if keys do not exist, give default values
     kml = Kml()
+    
     altitude = kw.pop('altitude', 2e7)
     roll = kw.pop('roll', 0)
     tilt = kw.pop('tilt', 0)
     altitudemode = kw.pop('altitudemode', AltitudeMode.relativetoground)
+    
+    # Create virtual camera that views the scene
     camera = Camera(latitude=np.mean([urcrnrlat, llcrnrlat]),
                     longitude=np.mean([urcrnrlon, llcrnrlon]),
                     altitude=altitude, roll=roll, tilt=tilt,
                     altitudemode=altitudemode)
-
     kml.document.camera = camera
+    
     draworder = 0
     for fig in figs:  # NOTE: Overlays are limited to the same bbox.
         draworder += 1
@@ -160,66 +159,3 @@ make_kml(llcrnrlon=-80.347,
          urcrnrlat=44.65107,
          figs=['overlay1.png'], colorbar='legend.png',
          kmzfile='mdt_uv.kmz', name='Mean Dynamic Topography and velocity')
-
-# def plot_tropomi(ds):
-#     """
-#     Return a Cartopy plot of averaged TROPOMI data ds.
-
-#     plot_type: 'toronto' or 'world'
-#     """
-#     fig, ax = plt.subplots(figsize=(3, 3))
-#     ax = plt.axes(projection=ccrs.PlateCarree())
-
-#     # set map to plot within plot_limits
-#     ax.set_extent(poi.plot_limits)
-
-#     # set 0 values to np.nan
-#     ds = ds.where(ds > 0, np.nan)
-
-#     # plot averaged values
-#     im = ds.isel(time=0).plot.pcolormesh(ax=ax,
-#                                          transform=ccrs.PlateCarree(),
-#                                          infer_intervals=True,
-#                                          cmap='viridis',
-#                                          vmin=10e-6,
-#                                          vmax=6e-5,
-#                                          norm=LogNorm(),
-#                                          robust=True,
-#                                          x='longitude',
-#                                          y='latitude',
-#                                          alpha=0.6,
-#                                          add_colorbar=False)
-
-#     # remove default title
-#     ax.set_title('')
-
-#     # ax.set_axis_off()
-#     ax.axis('off')
-#     ax.outline_patch.set_visible(False)
-
-#     # Show plot
-#     plt.show()
-
-#     # Save data to world_figures to toronto_figures with the time
-#     # of processing appended to the file name
-#     # ONLY runs if plot_tropomi.py is run directly
-#     if __name__ == '__main__':
-#         is_save = str(
-#             input('Do you want to save a png and KML of this plot? \n (Y/N)'))
-#         if is_save == 'Y' or is_save == 'y':
-#             print('Saving png for {}, weeks {}'.format(
-#                 ds.attrs['year'], ds.attrs['weeks']))
-#             pngfile = '{0}.png'.format('test')
-
-#             fig.savefig(pngfile, dpi=300, bbox_inches='tight', pad_inches=0, transparent=True)
-#     return im
-
-#############################
-
-# if __name__ == '__main__':
-#     input_files = os.path.join(tropomi_pkl_week, '2020_W21*')
-#     for test_file in sorted(glob.glob(input_files)):
-#         infile = open(test_file, 'rb')
-#         ds = pickle.load(infile)
-#         infile.close()
-#         im = plot_tropomi(ds)

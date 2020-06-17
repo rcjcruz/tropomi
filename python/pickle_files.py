@@ -111,9 +111,10 @@ def pickle_files(f):
     i = 1  # counter
     
     # Get list of pkl files
-    fpath = os.path.join(fdir, '*')
+    fpath = os.path.join(fdir, '{}/*'.format(city))
     pkl_list = sorted(glob.glob(fpath))
     date_list = []
+    
     for file in pkl_list:
         date_list.append(file[-8:]) 
 

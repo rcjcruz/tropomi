@@ -12,9 +12,16 @@ cities_coords = {'Toronto_coords': Point(-79.347, 43.651070),
                 #  'Washington, DC_coords': Point(-77.0369, 38.9072)
                  }
 
+cities = {'toronto': Point(-79.3832, 43.6532),
+            'montreal': Point(-73.5673, 45.5017),
+            'new_york': Point(-74.0060, 40.7128),
+            'vancouver': Point(-123.1207, 49.2827),
+            'los_angeles': Point(-118.2437, 34.0522)}
+
 # Define plot extent centred around Toronto
-extent_size = 1
-plot_limits = (cities_coords['Toronto_coords'].lon - extent_size, # lonmin
-               cities_coords['Toronto_coords'].lon + extent_size, # lonmx
-               cities_coords['Toronto_coords'].lat - extent_size, # latmin
-               cities_coords['Toronto_coords'].lat + extent_size) # latmx
+extent = 1
+# must provide city 
+# plot_limits = (city_coords.lon-extent,
+#                 city_coords.lon+extent,
+#                 city_coords.lat-extent,
+#                 city_coords.lat+extent)
