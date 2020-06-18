@@ -128,16 +128,13 @@ fig, ax = gearth_fig(llcrnrlon=-80.347,
                      urcrnrlat=44.65107,
                      pixels=pixels)
 
-input_files = os.path.join(tropomi_pkl_week, '2020_W21*')
+input_files = os.path.join(tropomi_pkl_month, '{}/2020*'.format('toronto'))
 for test_file in sorted(glob.glob(input_files)):
     infile = open(test_file, 'rb')
     ds = pickle.load(infile)
     infile.close()
 
 cs = ds.isel(time=0).plot.pcolormesh(x='longitude', y='latitude',
-                                     vmin=10e-6,
-                                     vmax=6e-5,
-                                     norm=LogNorm(),
                                      robust=True,
                                      add_colorbar=False)
 ax.set_axis_off()
@@ -158,4 +155,4 @@ make_kml(llcrnrlon=-80.347,
          urcrnrlon=-78.347,
          urcrnrlat=44.65107,
          figs=['overlay1.png'], colorbar='legend.png',
-         kmzfile='mdt_uv.kmz', name='Mean Dynamic Topography and velocity')
+         kmzfile='tor_2020.kmz', name='Mean NO2 TVCD')

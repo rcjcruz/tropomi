@@ -51,7 +51,6 @@ import calendar_functions as cf
 
 def get_city_files(f, city='toronto', extent=1, append_new=False):
     """
-    TODO: only iterate over new files and append
     Return .txt file containing .nc files with orbits over city given 
     file f. If .txt file exists, load append_new=True to append new files.
 
@@ -65,62 +64,91 @@ def get_city_files(f, city='toronto', extent=1, append_new=False):
             .txt file. Default: False.
     """
     
-    # Check if valid city, and if so, create plot limits around city
-    if city not in poi.cities.keys():
-        return ValueError('Invalid city. City must be %s' % list(poi.cities.keys()))
-    else:
-        # Create plot_limits surrounding city
-        extent = 5
-        city_coords = poi.cities[city]
-        plot_limits = (city_coords.lon-extent,
-                       city_coords.lon+extent,
-                       city_coords.lat-extent,
-                       city_coords.lat+extent)
-        e, w, s, n = plot_limits
+    is_start = str(
+        input('Do you want to start obtaining .nc files for {}? \n (Y/N)'.format(city)))
+    if is_start == 'N' or is_start == 'n':
+        sys.exit()
+    elif is_start == 'Y' or is_start =='y':
+        # Keep track of start time of process
+        start_time = time.time()
 
-    # Load output file; location is ~/tropomi/inventories/city/
-    output_file = '{}/{}_inventory.txt'.format(city, city)
-    output_fpath = os.path.join(inventories, output_file)
+        # Check if valid city, and if so, create plot limits around city
+        if city not in poi.cities.keys():
+            return ValueError('Invalid city. City must be %s' % list(poi.cities.keys()))
+        else:
+            # Create plot_limits surrounding city
+            plot_limits = poi.get_plot_limits(city=city, extent=5, res=0)
+            e, w, s, n = plot_limits
 
-    if append_new:
-        # Open the text file with pointer at beginning
-        file_object = open(output_fpath, "r+")
-    else:
-        file_object = open(output_fpath, "w+")
+        # Load output file; location is ~/tropomi/inventories/city/
+        output_file = '{}/{}_inventory.txt'.format(city, city)
+        output_fpath = os.path.join(inventories, output_file)
 
-    # Keep track of start time of proeess
-    start_time = time.time()
+        if append_new:
+            # Open the text file with pointer at beginning
+            file_object = open(output_fpath, "r+")
 
-    # Load path to NO2 files
-    fdir = tropomi_no2
-    fpath = os.path.join(fdir, f)
-    
-    # Iterate over all files in no2 directory
-    files = sorted(glob.glob(fpath))
+            # Change f to include 'OFFL'
+            f = '*OFFL*.nc'
+        else:
+            # If file doesn't exist, create one
+            file_object = open(output_fpath, "w+")
 
-    if append_new:
-        if 'OFFL' not in f:
-            return ValueError('f must include \'OFFL\'')
-        # Load text from city inventory .txt file
-        text = file_object.readlines()
-        print(sorted(text))
+        # Load path to NO2 files
+        fdir = tropomi_no2
+        fpath = os.path.join(fdir, f)
 
-        # Obtain last date of observations already catalogued; only use
-        # files with 'OFFL' because 'RPRO' stopped in 2019
-        offl_files = []
-        for file in text:
-            if 'OFFL' in file:
-                offl_files.append(file)
-        last_date = offl_files[-1][53:61]
+        # Iterate over all files in no2 directory
+        files = sorted(glob.glob(fpath))
 
         j = 1
-        # Check at the bottom of the list and append if date of file is
-        # greater than the last added file to the inventory
-        for i in reversed(range(len(files))):
-            date_of_obs = files[i][53:61]
-            if date_of_obs > last_date:
-                with xr.open_dataset(
-                        files[i], group='/PRODUCT')['nitrogendioxide_tropospheric_column'] as ds:
+        sds_name = 'nitrogendioxide_tropospheric_column'
+        if append_new:
+            # Load text from city inventory .txt file
+            text = file_object.readlines()
+
+            # Obtain last date of observations already catalogued; only use
+            # files with 'OFFL' because 'RPRO' stopped in 2019
+            offl_files = [s for s in text if 'OFFL' in s]
+            last_date = offl_files[-1][53:61]
+
+            # Check at the bottom of the list and append if date of file is
+            # greater than the last added file to the inventory
+            for i in reversed(range(len(files))):
+
+                # Load date of observation of file and check if it occurs after last
+                # recorded date in .txt file
+                date_of_obs = files[i][53:61]
+                if date_of_obs > last_date:
+                    with xr.open_dataset(files[i], group='/PRODUCT')[sds_name] as ds:
+
+                        # Keep track of start time of iteration
+                        start_time_iter = time.time()
+
+                        # Check if ds contains values over Toronto
+                        extracted = ds.where(
+                            (ds.longitude > e) &
+                            (ds.longitude < w) &
+                            (ds.latitude > s) &
+                            (ds.latitude < n), drop=True)
+
+                        # If extracted data is not empty, write the file name to
+                        # the output_file
+                        if len(extracted.data) != 0:
+                            print('[{}] {} includes an orbit over {}'.format(
+                                j, files[i], city))
+                            file_object.writelines([files[i], '\n'])
+
+                        else:
+                            print('[{}] {} does not include an orbit over {}'.format(
+                                j, files[i], city))
+
+                        print("--- %s seconds ---" % (time.time() - start_time_iter))
+                        i += 1
+                        j += 1
+        else:
+            for i in range(len(files)):
+                with xr.open_dataset(files[i], group='/PRODUCT')['sds_name'] as ds:
                     # Keep track of start time of iteration
                     start_time_iter = time.time()
 
@@ -131,7 +159,7 @@ def get_city_files(f, city='toronto', extent=1, append_new=False):
                         (ds.latitude > s) &
                         (ds.latitude < n), drop=True)
 
-                    # If extracted data is not empty, write the file name to
+                    # If extract_toronto data is not empty, write the file name to
                     # the output_file
                     if len(extracted.data) != 0:
                         print('[{}] {} includes an orbit over {}'.format(
@@ -142,46 +170,20 @@ def get_city_files(f, city='toronto', extent=1, append_new=False):
                         print('[{}] {} does not include an orbit over {}'.format(
                             j, files[i], city))
 
-                    print("--- %s seconds ---" %
-                          (time.time() - start_time_iter))
+                    print("--- %s seconds ---" % (time.time() - start_time_iter))
                     i += 1
-                    j += 1
+                    j += 1      
+                    
+        # Print total time elapsed
+        end_time = time.time()
+        hours, rem = divmod(end_time - start_time, 3600)
+        minutes, seconds = divmod(rem, 60)
+        print("Total time elapsed:{:0>2}:{:0>2}:{:05.2f}".format(
+            int(hours), int(minutes), seconds))
+    
     else:
-        j = 1
-        for i in range(len(files)):
-            with xr.open_dataset(
-                    files[i], group='/PRODUCT')['nitrogendioxide_tropospheric_column'] as ds:
-                # Keep track of start time of iteration
-                start_time_iter = time.time()
-
-                # Check if ds contains values over Toronto
-                extracted = ds.where(
-                    (ds.longitude > e) &
-                    (ds.longitude < w) &
-                    (ds.latitude > s) &
-                    (ds.latitude < n), drop=True)
-
-                # If extract_toronto data is not empty, write the file name to
-                # the output_file
-                if len(extracted.data) != 0:
-                    print('[{}] {} includes an orbit over {}'.format(
-                        j, files[i], city))
-                    file_object.writelines([files[i], '\n'])
-
-                else:
-                    print('[{}] {} does not include an orbit over {}'.format(
-                        j, files[i], city))
-
-                print("--- %s seconds ---" % (time.time() - start_time_iter))
-                i += 1
-                j += 1
-
-    end_time = time.time()
-    hours, rem = divmod(end_time - start_time, 3600)
-    minutes, seconds = divmod(rem, 60)
-    print("Total time elapsed:{:0>2}:{:0>2}:{:05.2f}".format(
-        int(hours), int(minutes), seconds))
-
+        print('Invalid option.')
+        
 #######################
 
 
@@ -455,32 +457,32 @@ def aggregate_files_into_txt(aggregate='weekly', city='toronto', **kwargs):
 
 
 if __name__ == '__main__':
-    # 0) Choose city
+    # 0) Choose cit
     cities = ['toronto', 'montreal', 'los_angeles', 'vancouver', 'new_york']
     city_of_choice = cities[0]
-    
+
     # 1) Read city files
     # f = '*.nc'
-    # get_city_files(f, city=city_of_choice, append_new=False)
+    # get_city_files(f, city=city_of_choice, append_new=True)
 
-    # # 2) Pickle files
+    # 2) Pickle files
     # my_files = os.path.join(inventories, '{}/{}_inventory.txt'.format(city_of_choice, city_of_choice))
     # pickle_files(my_files, city=city_of_choice)
 
     # OPTIONAL:
-    # list_of_files = create_toronto_list(vancouver_files)
-    # list_of_dates = create_date_list(vancouver_files)
-    # dict_of_montreal_orbits = create_toronto_orbits_by_date(vancouver_files)
+    # list_of_files = create_toronto_list(my_files)
+    # list_of_dates = create_date_list(my_files)
+    # dict_of_montreal_orbits = create_toronto_orbits_by_date(my_files)
 
     # 3) Create inventory text file for every couple weeks between 2018 and 2020
     # for i in range(2018, 2021):
     #     for j in range(1, 52, 2):
-            # start, end, calendar_week = aggregate_files_into_txt(city=city_of_choice,
-            #                                                     aggregate='weekly',
-            #                                                     year=i, calendar_week=j)
+    # start, end, calendar_week = aggregate_files_into_txt(city=city_of_choice,
+    #                                                     aggregate='weekly',
+    #                                                     year=i, calendar_week=j)
     # OR create inventory text file given a month and year
     for city in cities:
-        for i in range(2019, 2021):
+        for i in range(2018, 2019):
             start, end, month = aggregate_files_into_txt(city=city,
                                                         aggregate='monthly',
                                                         year=i,

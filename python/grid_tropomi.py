@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Usage: grid_tropomi.py
+
+Script containing functions:
+    - create_dict(f, aggregate='weekly', city='toronto')
+    - aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto')
+    
+Return a dictionary object containing datasets with 
+"""
+
+
 import os
 import sys
 import glob
@@ -91,12 +104,8 @@ def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
     start_time = time.time()
 
     # Lat/lon max/min
-    extent = 1
-    city_coords = poi.cities[city]
-    plot_limits = (city_coords.lon-extent,
-                   city_coords.lon+extent,
-                   city_coords.lat-extent,
-                   city_coords.lat+extent)
+    
+    plot_limits = poi.get_plot_limits(city=city,extent=1, res=res)
 
     lonmn, lonmx, latmn, latmx = plot_limits
 
@@ -235,9 +244,10 @@ def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
 
 
 if __name__ == '__main__':
-    f = '2020_M05.txt'
+    files = ['2018_M05.txt', '2019_M05.txt', '2020_M05.txt']
     # files_dict = create_dict(f, aggregate='monthly', city='new_york')
-    ds = aggregate_tropomi(f, aggregate='monthly', city='toronto')
+    for f in files:
+        ds = aggregate_tropomi(f, aggregate='monthly', city='vancouver')
     # # to create pkl files for every two week range dict
     # for i in range(1, 10, 2):
     #     fpath = os.path.join(inventories, '*W0{}*'.format(i))
