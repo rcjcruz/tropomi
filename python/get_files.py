@@ -486,7 +486,7 @@ if __name__ == '__main__':
             start, end, month = aggregate_files_into_txt(city=city,
                                                         aggregate='monthly',
                                                         year=i,
-                                                        month=5)
+                                                        month=4)
 
     # # delete empty files
     # inv_list = glob.glob(os.path.join(inventories, '{}/week/*W*'.format(city_of_choice)))

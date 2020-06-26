@@ -119,8 +119,8 @@ def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
     dens_arr = np.zeros([lat_bnds.size, lon_bnds.size], dtype=np.int32)
 
     # Load files into dictionary
-    year = int(f[:4])
-    ds_dict = create_dict(f, aggregate=aggregate, city=city)
+    year = int(f[-15:-11])
+    ds_dict = create_dict(f[-15:], aggregate=aggregate, city=city)
 
     # Iterate over each date in two-week or monthly range and add values to
     # val_arr and dens_arr
@@ -244,13 +244,14 @@ def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
 
 
 if __name__ == '__main__':
-    files = ['2018_M05.txt', '2019_M05.txt', '2020_M05.txt']
-    # files_dict = create_dict(f, aggregate='monthly', city='new_york')
-    for f in files:
-        ds = aggregate_tropomi(f, aggregate='monthly', city='vancouver')
+    # files = ['2019_M03.txt', '2020_M03.txt']
+    # # files_dict = create_dict(f, aggregate='monthly', city='new_york')
+    # for f in files:
+    #     ds = aggregate_tropomi(f, aggregate='monthly', city='toronto')
     # # to create pkl files for every two week range dict
-    # for i in range(1, 10, 2):
-    #     fpath = os.path.join(inventories, '*W0{}*'.format(i))
-    #     files = glob.glob(fpath)
-    #     for test_file in files:
-    #         ds = aggregate_tropomi(test_file)
+    for i in range(9, 12, 2):
+        fpath = os.path.join(inventories, 'toronto/week/2019*W{:02d}*'.format(i))
+        files = glob.glob(fpath)
+        print(files)
+        for test_file in files:
+            ds = aggregate_tropomi(test_file)
