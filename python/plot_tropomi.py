@@ -16,6 +16,7 @@ Averaged values are found in val_arr_mean array
 import open_tropomi as ot
 import grid_tropomi as gt
 import points_of_interest as poi
+import merra2_functions as m2f
 from paths import *
 
 import os
@@ -36,7 +37,7 @@ from collections import namedtuple
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-import matplotlib.ticker as ticker
+import matplotlib.ticker as mticker
 from matplotlib.ticker import LogFormatter
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
@@ -74,7 +75,7 @@ def load_ds(city, start_month, start_year,
     Returns:
         ds_list (list of xr.DataArray)
     """
-    
+
     ds_list = []
 
     if city not in list(cities.keys()):
@@ -93,6 +94,7 @@ def load_ds(city, start_month, start_year,
 
 ############################
 
+
 def get_resid(ds):
     """
     Args:
@@ -102,6 +104,13 @@ def get_resid(ds):
     Returns:
         avg_ds(xr.DataArray)
         res_ds(xr.DataArray)
+
+    >>> city = 'toronto'
+    >>> ds_list = load_ds(city, start_month=5,
+                          start_year=2019,
+                          end_month=5,
+                          end_year=2020)
+    >>> avg_ds, res_ds = get_resid(ds_list)
     """
 
     start_year = ds[0].year
@@ -114,7 +123,7 @@ def get_resid(ds):
     for d in ds:
         if d.year != end_year:
             sum_ds.append(d)
-    
+
     yearsum = [sum(x) for x in zip(*sum_ds)]
     avg = yearsum[0] / (len(sum_ds))
 
@@ -138,7 +147,8 @@ def get_resid(ds):
         if start_year == end_year-1:
             time_str = 'Avg. {} {}'.format(month_name, start_year)
         else:
-            time_str = 'Avg. {} {}-{}'.format(month_name, start_year, end_year-1)
+            time_str = 'Avg. {} {}-{}'.format(month_name,
+                                              start_year, end_year-1)
 
     # calculate relative difference and store in new_ds
     res_ds = xr.DataArray(np.array([(year_of_interest-avg) / avg]),
@@ -162,6 +172,7 @@ def get_resid(ds):
     return avg_ds, res_ds
 
 ############################
+
 
 def create_colorbar(im, ax, label, orientation='horizontal',
                     fmt_num=-5, mathbool=True, resid=False):
@@ -212,7 +223,8 @@ def create_colorbar(im, ax, label, orientation='horizontal',
 
 ############################
 
-def plot_tropomi(ds, plot_type='weekly', city='toronto'):
+
+def plot_tropomi(ds, plot_type='weekly', city='toronto', **kwargs):
     """
     Return a Cartopy plot of averaged TROPOMI data ds over a given city.
     Aggregated data type is supplied to plot_type.
@@ -296,7 +308,15 @@ def plot_tropomi(ds, plot_type='weekly', city='toronto'):
                                          x='longitude',
                                          y='latitude',
                                          add_colorbar=False)
-    colors = im.cmap(im.norm(im.get_array()))
+
+    # Plot winds
+    winds = m2f.load_wind_data(city=city,
+                               month=month, year=year, time=15)
+
+    qv = plt.quiver(winds.lon, winds.lat, winds.u[0][0], winds.v[0][0],
+                    scale=20, pivot='middle', color='r')
+    qk = plt.quiverkey(qv, 0.8, 0.9, 1, r'1 $\frac{m}{s}$',
+                       labelpos='E', coordinates='figure')
 
     # remove default title
     ax.set_title('')
@@ -354,28 +374,29 @@ def plot_tropomi(ds, plot_type='weekly', city='toronto'):
     # Save data to world_figures to toronto_figures with the time
     # of processing appended to the file name
     # ONLY runs if plot_tropomi.py is run directly
-    if __name__ == '__main__':
-        is_save = str(
-            input('Do you want to save a png and KML of this plot? \n (Y/N)'))
-        if is_save == 'Y' or is_save == 'y':
-            if plot_type == 'weekly':
-                print('Saving png for {}, weeks {}'.format(
-                    ds.attrs['year'], ds.attrs['weeks']))
-                pngfile = '{0}.png'.format(
-                    '../figures/{}/{}_W{}'.format(city, year, weeks))
+    # if __name__ == '__main__':
+    #     is_save = str(
+    #         input('Do you want to save a png and KML of this plot? \n (Y/N)'))
+    #     if is_save == 'Y' or is_save == 'y':
+    #         if plot_type == 'weekly':
+    #             print('Saving png for {}, weeks {}'.format(
+    #                 ds.attrs['year'], ds.attrs['weeks']))
+    #             pngfile = '{0}.png'.format(
+    #                 '../figures/{}/{}_W{}'.format(city, year, weeks))
 
-                fig.savefig(pngfile, dpi=300)
-            elif plot_type == 'monthly':
-                print('Saving png for {}, month {}'.format(
-                    ds.attrs['year'], ds.attrs['month']))
-                pngfile = '{0}.png'.format(
-                    '../figures/{}/{}_M{:02d}'.format(city, year, month))
+    #             fig.savefig(pngfile, dpi=300)
+    #         elif plot_type == 'monthly':
+    #             print('Saving png for {}, month {}'.format(
+    #                 ds.attrs['year'], ds.attrs['month']))
+    #             pngfile = '{0}.png'.format(
+    #                 '../figures/{}/{}_M{:02d}'.format(city, year, month))
 
-                fig.savefig(pngfile, dpi=300)
+    #             fig.savefig(pngfile, dpi=300)
 
 #############################
 
-def plot_residual(ds, plot_type='weekly', city='toronto', diff=False):
+
+def plot_residual(ds, plot_type='weekly', city='toronto', diff=False, **kwargs):
     """
     Return a figure with three Cartopy plots of averaged TROPOMI data ds.
     First plot is 2019 data, second plot is 2020 data, third plot is residual.
@@ -412,6 +433,7 @@ def plot_residual(ds, plot_type='weekly', city='toronto', diff=False):
     # Accumulate gridlines and mappables. Load labels for eahc plot
     gls = []
     ims = []
+    winds = []
     labels = list(string.ascii_uppercase)[:col_nums]
 
     for i, label in enumerate(labels):
@@ -474,7 +496,7 @@ def plot_residual(ds, plot_type='weekly', city='toronto', diff=False):
                                                 add_colorbar=False)
         ims.append(im)
 
-        # # remove default title
+        # remove default title
         axes[i].set_title(ds[i].title)
 
         # Define Natural Earth features
@@ -509,10 +531,10 @@ def plot_residual(ds, plot_type='weekly', city='toronto', diff=False):
 
         gls[i].xlabels_top = False
         gls[i].ylabels_right = False
-        gl.xlocator = ticker.FixedLocator(np.arange(int(plot_limits[0])-1,
-                                                    int(plot_limits[1])+1, 0.5))
-        gl.ylocator = ticker.FixedLocator(np.arange(int(plot_limits[2])-1,
-                                                    int(plot_limits[3])+1, 0.5))
+        gl.xlocator = mticker.FixedLocator(np.arange(int(plot_limits[0])-1,
+                                                     int(plot_limits[1])+1, 0.5))
+        gl.ylocator = mticker.FixedLocator(np.arange(int(plot_limits[2])-1,
+                                                     int(plot_limits[3])+1, 0.5))
         gls[i].xformatter = LONGITUDE_FORMATTER
         gls[i].yformatter = LATITUDE_FORMATTER
 
@@ -559,13 +581,13 @@ def plot_residual(ds, plot_type='weekly', city='toronto', diff=False):
 
 if __name__ == '__main__':
     test_file = os.path.join(
-        tropomi_pkl_week, 'toronto/2019_W11_12')
+        tropomi_pkl_month, 'toronto/2020_M05')
     infile = open(test_file, 'rb')
     ds = pickle.load(infile)
     infile.close()
-    
-    plot_tropomi(ds, 'weekly', 'toronto')
-    
+
+    plot_tropomi(ds, 'monthly', 'toronto')
+
     # city = 'toronto'
     # ds_list = load_ds(city, start_month=5,
     #                   start_year=2019,

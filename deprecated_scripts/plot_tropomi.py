@@ -184,29 +184,21 @@ def plot_tropomi(ds, plot_type):
     # Save data to world_figures to toronto_figures with the time
     # of processing appended to the file name
     # ONLY runs if plot_tropomi.py is run directly
-    if __name__ == '__main__':
-        is_save = str(
-            input('Do you want to save a png of this plot? \n (Y/N)'))
-        if is_save == 'Y' or is_save == 'y':
-            if (plot_type == 'world'):
-                pngfile = '{0}.png'.format(
-                    '../world_figures/WOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
-            elif (plot_type == 'toronto'):
-                pngfile = '{0}.png'.format(
-                    '../toronto_figures/TOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
+    # if __name__ == '__main__':
+    #     is_save = str(
+    #         input('Do you want to save a png of this plot? \n (Y/N)'))
+    #     if is_save == 'Y' or is_save == 'y':
+    #         if (plot_type == 'world'):
+    #             pngfile = '{0}.png'.format(
+    #                 '../world_figures/WOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
+    #         elif (plot_type == 'toronto'):
+    #             pngfile = '{0}.png'.format(
+    #                 '../toronto_figures/TOR_' + date + dt.datetime.now().strftime('_%Y%m%dT%H%M%S'))
 
-            fig.savefig(pngfile, dpi=300)
+    #         fig.savefig(pngfile, dpi=300)
 
 #############################
 
-
-# def get_start_and_end_date_from_calendar_week(year, calendar_week):
-#     """Calendar week SHOULD be odd
-#     Shows two weeks worth of dates.
-#     """
-#     monday = datetime.datetime.strptime(
-#         f'{year}-{calendar_week}-1', '%Y-%W-%w').date()
-#     return monday, monday + datetime.timedelta(days=13.9)
 
 
 if __name__ == '__main__':
