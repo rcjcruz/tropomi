@@ -297,13 +297,16 @@ def plot_tropomi(ds, plot_type='weekly', city='toronto', **kwargs):
     # set 0 values to np.nan
     ds = ds.where(ds > 0, np.nan)
 
+    vmin = np.amin(ds[:-1])
+    vmax = np.amax(ds[:-1])
+
     # plot averaged values
     im = ds.isel(time=0).plot.pcolormesh(ax=ax,
                                          transform=ccrs.PlateCarree(),
                                          infer_intervals=True,
                                          cmap='Blues',
-                                         #  vmin=10e-6,
-                                         #  vmax=6e-5,
+                                         vmin=vmin,
+                                         vmax=vmax,
                                          robust=True,
                                          x='longitude',
                                          y='latitude',
@@ -581,7 +584,7 @@ def plot_residual(ds, plot_type='weekly', city='toronto', diff=False, **kwargs):
 
 if __name__ == '__main__':
     test_file = os.path.join(
-        tropomi_pkl_month, 'toronto/2020_M05')
+        tropomi_pkl_month, 'toronto/2019_M05')
     infile = open(test_file, 'rb')
     ds = pickle.load(infile)
     infile.close()
