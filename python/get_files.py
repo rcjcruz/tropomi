@@ -289,10 +289,8 @@ def pickle_files(f, city='toronto'):
         if date not in date_list:
             start_time_iter = time.time()
 
-            f = '*__%s*.nc' % date
-
             # Read all .nc files for a date into a xr.DataArray
-            ds = ot.dsread(f)
+            ds = ot.dsread(date, city=city)
 
             # Save pickled file to /export/data/scratch/tropomi_rc/day_pkl/city
             pkl_path = fdir + city + '/'

@@ -49,16 +49,22 @@ def dsmod(ds):
 
 #############################
 
-def dsread(f):
+def dsread(f, city='toronto'):
     """
     Read netCDF4 files and access PRODUCT and GEOLOCATIONS folders to 
     extract NO2, qa_value, lat/lon bounds into one DataArray.
     
     f (glob string): file name.
+    city (str): city name.
+    
+    >>> ds = dsread('__20200501', city='toronto')
     """
     
-    fdir = tropomi_no2
-    fpath = os.path.join(fdir, f)
+    # Create list of TROPOMI files found in city inventory for a given date.
+    f_inv = '{}/{}_inventory.txt'.format(city, city)
+    fpath_inv = os.path.join(inventories, f_inv)
+    city_inv = open(fpath_inv, 'r+').read().splitlines()
+    files = [s for s in city_inv if f in s]
     
     print('Reading ', f)
     # Load NO2 and qa_value
@@ -88,4 +94,4 @@ def dsread(f):
 #############################
     
 if __name__ == '__main__':
-    ds = dsread('*__20200501*.nc')
+    ds = dsread('__20200501')

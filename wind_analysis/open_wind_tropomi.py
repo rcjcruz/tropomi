@@ -49,24 +49,30 @@ def dsmod(ds):
 
 #############################
 
-def dsread(f):
+def dsread(f, city='toronto'):
     """
     Read netCDF4 files and access PRODUCT and GEOLOCATIONS folders to 
     extract NO2, qa_value, lat/lon bounds into one DataArray.
     
     f (glob string): file name.
+    city (str): city name.
+    
+    >>> ds = dsread('__20200501', city='toronto')
     """
     
-    fdir = tropomi_no2
-    fpath = os.path.join(fdir, f)
+    # Create list of TROPOMI files found in city inventory for a given date.
+    f_inv = '{}/{}_inventory.txt'.format(city, city)
+    fpath_inv = os.path.join(inventories, f_inv)
+    city_inv = open(fpath_inv, 'r+').read().splitlines()
+    files = [s for s in city_inv if f in s]
     
     print('Reading ', f)
     # Load NO2 and qa_value
-    ds = xr.open_mfdataset(fpath, group='PRODUCT',
+    ds = xr.open_mfdataset(files, group='PRODUCT',
                            concat_dim='scanline',
                            preprocess=dsmod)
     # Load latitude_bounds and longitude_bounds
-    bds = xr.open_mfdataset(fpath, group='/PRODUCT/SUPPORT_DATA/GEOLOCATIONS',
+    bds = xr.open_mfdataset(files, group='/PRODUCT/SUPPORT_DATA/GEOLOCATIONS',
                        concat_dim='scanline').squeeze('time')
     
     # Assign lat/lon bounds from bds to data variables in ds
@@ -88,4 +94,8 @@ def dsread(f):
 #############################
     
 if __name__ == '__main__':
-    ds = dsread('*__20200501*.nc')
+    # ds = dsread('*__20200501*.nc')
+    ds = dsread('__20200501', city='toronto')
+
+    # test_file = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200501T164929_20200501T183100_13213_01_010302_20200503T094618.nc'
+    # data2 = xr.open_dataset(test_file, group='/PRODUCT')
