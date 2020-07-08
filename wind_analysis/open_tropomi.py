@@ -5,7 +5,7 @@ Usage: open_wind_tropomi.py
 
 Script contains functions:
     - dsmod(ds)
-    - dsread(f)
+    - dsread(f, city='toronto')
 
 Script to open multiple netCDF files for TROPOMI NO2 product. 
 
@@ -20,7 +20,6 @@ import os
 import calendar
 import datetime
 import sys
-import get_files as gf
 from datetime import timedelta
 from paths import *
 
@@ -57,16 +56,17 @@ def dsread(f, city='toronto'):
     f (glob string): file name.
     city (str): city name.
     
-    >>> ds = dsread('__20200501', city='toronto')
+    >>> ds = dsread('20200501', city='toronto')
     """
     
     # Create list of TROPOMI files found in city inventory for a given date.
     f_inv = '{}/{}_inventory.txt'.format(city, city)
     fpath_inv = os.path.join(inventories, f_inv)
     city_inv = open(fpath_inv, 'r+').read().splitlines()
-    files = [s for s in city_inv if f in s]
+    f_str = '__' + f
+    files = [s for s in city_inv if f_str in s]
     
-    print('Reading ', f)
+    print('Reading', f)
     # Load NO2 and qa_value
     ds = xr.open_mfdataset(files, group='PRODUCT',
                            concat_dim='scanline',
@@ -95,7 +95,7 @@ def dsread(f, city='toronto'):
     
 if __name__ == '__main__':
     # ds = dsread('*__20200501*.nc')
-    ds = dsread('__20200501', city='toronto')
+    ds = dsread('20200501', city='toronto')
 
     # test_file = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200501T164929_20200501T183100_13213_01_010302_20200503T094618.nc'
     # data2 = xr.open_dataset(test_file, group='/PRODUCT')

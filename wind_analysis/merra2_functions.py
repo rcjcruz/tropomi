@@ -6,6 +6,10 @@ import points_of_interest as poi
 from paths import *
 
 
+# lats = np.arange(lat_min, lat_max, 0.1)
+# lons = np.arange(lon_min, lon_max, 0.1)
+# new = data.interp(lat=lats, lon=lons, method='linear')
+
 def load_wind_data(city, month, year, time):
     """
     Return a xr.DataArray with wind data over a city averaged 
