@@ -106,7 +106,6 @@ def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
     # Lat/lon max/min
     
     plot_limits = poi.get_plot_limits(city=city,extent=1, res=res)
-
     lonmn, lonmx, latmn, latmx = plot_limits
 
     # Create a uniform lat/lon grid
@@ -124,7 +123,6 @@ def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
 
     # Iterate over each date in two-week or monthly range and add values to
     # val_arr and dens_arr
-    j = 1
     for date in list(ds_dict.keys()):
         print('[{}] Aggregating {}'.format(j, date))
         ds = ds_dict[date]
@@ -171,8 +169,6 @@ def aggregate_tropomi(f, res=0.05, aggregate='weekly', city='toronto'):
             # grid square
             val_arr[lat_slice, lon_slice] += no2[i]
             dens_arr[lat_slice, lon_slice] += 1
-
-        j += 1
 
     # Set negative values in val_arr to 0
     val_arr = val_arr.clip(min=0)

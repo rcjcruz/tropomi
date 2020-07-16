@@ -8,7 +8,7 @@ from collections import namedtuple
 import tropomi_functions as tf
 
 # Variables
-file_name = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200519T074510_20200519T092641_13463_01_010302_20200521T001642.nc'
+file_name = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200510T172154_20200510T190325_13341_01_010302_20200512T224427.nc'
 xno2_path = '/PRODUCT/SUPPORT_DATA/DETAILED_RESULTS/'
 sds_name = 'nitrogendioxide_tropospheric_column'
 total_sds_name = 'nitrogendioxide_total_column'
@@ -18,7 +18,14 @@ total_sds_name = 'nitrogendioxide_total_column'
 
 # with xr.open_dataset(file_name, group=xno2_path)[total_sds_name] as xno2:
 # Reading the data
-no2 = xr.open_dataset(file_name, group='/PRODUCT')[sds_name]
+
+# NO FILTER
+# no2 = xr.open_dataset(file_name, group='/PRODUCT')[sds_name]
+
+# WITH FILTER
+ds = xr.open_dataset(file_name, group='/PRODUCT')
+subset_ds = ds.where(ds['qa_value'] > 0.75, drop=True)
+no2 = subset_ds[sds_name]
 
 fields, short_file_name = tf.read_data(file_name)
 
@@ -29,4 +36,4 @@ print("Orbit: {}, Sensing Start: {}, Sensing Stop: {}".format(fields[10],
 
 # Plot orbit on the globe or on Toronto
 # If Toronto, append plot_limits to plot_no2 args
-tf.plot_no2(no2, 'globe', fields, short_file_name)
+tf.plot_no2(no2, 'toronto', fields, short_file_name)

@@ -18,7 +18,7 @@ for i in range(len(bearing)):
         bearing[i] += 360
             
             
-def rotate_wind(pivot, point, angle):
+def rotate(pivot, point, angle):
     """
     Return xy-coordinate for an initial point (x, y) rotated by angle (in 
     radians) around a pivot (x, y).
@@ -53,9 +53,9 @@ def rotate_wind(pivot, point, angle):
 # Y_new = np.zeros_like(Y, dtype=float)
 # U_new = speed
 # V_new = np.zeros_like(V, dtype=float)
-# X_new[0], Y_new[0] = rotate_wind((0,0), (-1, -1), 180)
-# X_new[1], Y_new[1] = rotate_wind((0,0), (-1, -2), 180)
-# X_new[2], Y_new[2] = rotate_wind((0,0), (-2, -1), 180) 
+# X_new[0], Y_new[0] = rotate((0,0), (-1, -1), 180)
+# X_new[1], Y_new[1] = rotate((0,0), (-1, -2), 180)
+# X_new[2], Y_new[2] = rotate((0,0), (-2, -1), 180) 
 pivot = (0,0)
 # rotated xy coordinates
 # X_new = np.zeros_like(X, dtype=float)
@@ -66,7 +66,7 @@ pivot = (0,0)
 #     for j in range(len(Y)):
 #         point = (X[i][j], Y[i][j])
 #         angle = bearing[i][j]
-#         X_new[i][j], Y_new[i][j] = rotate_wind(pivot, point, angle)
+#         X_new[i][j], Y_new[i][j] = rotate(pivot, point, angle)
 #         U_new[i][j] = np.sqrt((X[i][j]) ** 2 + (Y[i][j]) ** 2)
 
 X_new = np.zeros_like(X, dtype=float)
@@ -76,13 +76,13 @@ V_new = np.zeros_like(V, dtype=float) # should always be 0
 for i in range(len(X)):
     point = (X[i], Y[i])
     angle = bearing[i]
-    X_new[i], Y_new[i] = rotate_wind(pivot, point, angle)
+    X_new[i], Y_new[i] = rotate(pivot, point, angle)
     U_new[i] = np.sqrt((X[i]) ** 2 + (Y[i]) ** 2)
         
 # # point = (U[0][0], V[0][0])
 # # pivot = (0,0)
 # # angle = bearing[0][0]
-# # new_point = rotate_wind(pivot, point, angle)
+# # new_point = rotate(pivot, point, angle)
 
 fig, (ax1, ax2) = plt.subplots(1,2)
 q = ax1.quiver(X, Y, U, V)

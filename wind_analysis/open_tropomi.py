@@ -23,6 +23,8 @@ import sys
 from datetime import timedelta
 from paths import *
 
+import points_of_interest as poi
+
 # Suppress warnings
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -65,6 +67,7 @@ def dsread(f, city='toronto'):
     city_inv = open(fpath_inv, 'r+').read().splitlines()
     f_str = '__' + f
     files = [s for s in city_inv if f_str in s]
+    print(files)
     
     print('Reading', f)
     # Load NO2 and qa_value
@@ -95,7 +98,10 @@ def dsread(f, city='toronto'):
     
 if __name__ == '__main__':
     # ds = dsread('*__20200501*.nc')
-    ds = dsread('20200501', city='toronto')
+    city='toronto'
+    ds = dsread('20200502', city='toronto')
+    w, e, s, n = poi.get_plot_limits(city=city, extent=1, res=0)
+    ds2 = ds.where((ds.longitude >= w) & (ds.longitude <= e) & (ds.latitude >= s) & (ds.latitude <= n), drop=True)
 
     # test_file = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200501T164929_20200501T183100_13213_01_010302_20200503T094618.nc'
     # data2 = xr.open_dataset(test_file, group='/PRODUCT')

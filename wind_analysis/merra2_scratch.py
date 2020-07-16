@@ -31,8 +31,7 @@ def get_wind_speed_and_dir(ds):
 
 
 # Load wind data
-data = xr.open_dataset(
-    "/export/data/scratch/merra2/tavg1_wind/MERRA2_400.tavg1_2d_slv_Nx.20200501.nc4.nc4")
+data = xr.open_dataset("/export/data/scratch/merra2/tavg1_wind/MERRA2_400.tavg1_2d_slv_Nx.20200501.nc4.nc4")
 data['speed'], data['bearing'] = get_wind_speed_and_dir(data)
 
 lats = data['lat']
@@ -125,11 +124,11 @@ if __name__ == '__main__':
     winds = m2f.load_wind_data(city='toronto',
                            month=5, year=2020, time=15)
 
-    # qv = plt.quiver(lon, lat, u_nans[0, :, :],
-    #                 v_nans[0, :, :], scale=100, color='k')
+    qv = plt.quiver(lon, lat, u_nans[0, :, :],
+                    v_nans[0, :, :], scale=100, color='k')
     
-    qv = plt.quiver(winds.lon, winds.lat, winds.u[0][0], winds.v[0][0],
-                    scale=50, color='k')
+    # qv = plt.quiver(winds.lon, winds.lat, winds.u[0][0], winds.v[0][0],
+    #                 scale=50, color='k')
     qk = plt.quiverkey(qv, 0.8, 0.7, 1, r'1 $\frac{m}{s}$',
                        labelpos='E', coordinates='figure')
     states_provinces = cfeature.NaturalEarthFeature(

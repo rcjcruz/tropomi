@@ -36,7 +36,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 #     print('Did not find a text file containing file names (perhaps name does not match)')
 #     sys.exit()
 
-test_file = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200519T074510_20200519T092641_13463_01_010302_20200521T001642.nc'
+test_file = file_name = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200510T172154_20200510T190325_13341_01_010302_20200512T224427.nc'
 file = nc.Dataset(test_file, 'r')
 # read the data
 ds = file

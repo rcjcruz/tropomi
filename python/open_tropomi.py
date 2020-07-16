@@ -66,6 +66,7 @@ def dsread(f, city='toronto'):
     city_inv = open(fpath_inv, 'r+').read().splitlines()
     f_str = '__' + f
     files = [s for s in city_inv if f_str in s]
+    print(files)
     
     print('Reading', f)
     # Load NO2 and qa_value

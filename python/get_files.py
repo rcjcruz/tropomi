@@ -78,7 +78,7 @@ def get_city_files(f, city='toronto', extent=1, append_new=False):
         else:
             # Create plot_limits surrounding city
             plot_limits = poi.get_plot_limits(city=city, extent=5, res=0)
-            e, w, s, n = plot_limits
+            w, e, s, n = plot_limits
 
         # Load output file; location is ~/tropomi/inventories/city/
         output_file = '{}/{}_inventory.txt'.format(city, city)
@@ -127,8 +127,8 @@ def get_city_files(f, city='toronto', extent=1, append_new=False):
 
                         # Check if ds contains values over Toronto
                         extracted = ds.where(
-                            (ds.longitude > e) &
-                            (ds.longitude < w) &
+                            (ds.longitude < e) &
+                            (ds.longitude > w) &
                             (ds.latitude > s) &
                             (ds.latitude < n), drop=True)
 
@@ -154,8 +154,8 @@ def get_city_files(f, city='toronto', extent=1, append_new=False):
 
                     # Check if ds contains values over Toronto
                     extracted = ds.where(
-                        (ds.longitude > e) &
-                        (ds.longitude < w) &
+                        (ds.longitude < e) &
+                        (ds.longitude > w) &
                         (ds.latitude > s) &
                         (ds.latitude < n), drop=True)
 
@@ -460,8 +460,8 @@ if __name__ == '__main__':
     city_of_choice = cities[0]
 
     # 1) Read city files
-    # f = '*.nc'
-    # get_city_files(f, city=city_of_choice, append_new=True)
+    f = '*.nc'
+    get_city_files(f, city=city_of_choice, append_new=True)
 
     # 2) Pickle files
     # my_files = os.path.join(inventories, '{}/{}_inventory.txt'.format(city_of_choice, city_of_choice))
@@ -479,12 +479,12 @@ if __name__ == '__main__':
     #                                                     aggregate='weekly',
     #                                                     year=i, calendar_week=j)
     # OR create inventory text file given a month and year
-    for city in cities:
-        for i in range(2018, 2019):
-            start, end, month = aggregate_files_into_txt(city=city,
-                                                        aggregate='monthly',
-                                                        year=i,
-                                                        month=4)
+    # for city in cities:
+    #     for i in range(2018, 2019):
+    #         start, end, month = aggregate_files_into_txt(city=city,
+    #                                                     aggregate='monthly',
+    #                                                     year=i,
+    #                                                     month=4)
 
     # # delete empty files
     # inv_list = glob.glob(os.path.join(inventories, '{}/week/*W*'.format(city_of_choice)))

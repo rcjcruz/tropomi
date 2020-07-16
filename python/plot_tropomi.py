@@ -16,7 +16,7 @@ Averaged values are found in val_arr_mean array
 import open_tropomi as ot
 import grid_tropomi as gt
 import points_of_interest as poi
-import merra2_functions as m2f
+# import merra2_functions as m2f
 from paths import *
 
 import os
@@ -65,7 +65,7 @@ def load_ds(city, start_month, start_year,
     Return a list of datasets for city from start to end.
 
     Args:
-        city (str): City of interest. Valid cities include: 'toronto', 
+        city (str): City of interest. Valid cities include: 'toronto',
             'montreal', 'vancouver', 'los_angeles', 'new_york'
         start_month (int): start month, 1 <= start_month <= 12
         start_year (int): start year
@@ -98,7 +98,7 @@ def load_ds(city, start_month, start_year,
 def get_resid(ds):
     """
     Args:
-        ds (list of xr.DataArray): a list containing the data arrays used to 
+        ds (list of xr.DataArray): a list containing the data arrays used to
             calculate the relative difference.
 
     Returns:
@@ -181,12 +181,12 @@ def create_colorbar(im, ax, label, orientation='horizontal',
 
     Args:
         im: the mathplotlib.cm.ScalarMappable described by this colorbar.
-        ax (Axes): list of axes. 
+        ax (Axes): list of axes.
         label (str): label for colorbar.
         orientation (str): vertical or horizontal.
         fmt_num (num): exponent for scientific notation.
         mathbool (bool): toggle mathText.
-        resid (bool): Toggle residual difference. 
+        resid (bool): Toggle residual difference.
 
     Returns:
         cbar (colorbar)
@@ -264,7 +264,7 @@ def plot_tropomi(ds, plot_type='weekly', city='toronto', **kwargs):
             fontsize=18,
             transform=ax.transAxes)
     ax.text(0, 1.02,
-            r"{}, {}".format(cities[city], date_str),
+            r"{}, {}".format(poi.cities[city], date_str),
             fontsize=14,
             transform=ax.transAxes)
 
@@ -297,8 +297,8 @@ def plot_tropomi(ds, plot_type='weekly', city='toronto', **kwargs):
     # set 0 values to np.nan
     ds = ds.where(ds > 0, np.nan)
 
-    vmin = np.amin(ds[:-1])
-    vmax = np.amax(ds[:-1])
+    vmin = np.amin(ds[0].values)
+    vmax = np.amax(ds[0].values)
 
     # plot averaged values
     im = ds.isel(time=0).plot.pcolormesh(ax=ax,
@@ -312,14 +312,14 @@ def plot_tropomi(ds, plot_type='weekly', city='toronto', **kwargs):
                                          y='latitude',
                                          add_colorbar=False)
 
-    # Plot winds
-    winds = m2f.load_wind_data(city=city,
-                               month=month, year=year, time=15)
+    # # Plot winds
+    # winds = m2f.load_wind_data(city=city,
+    #                            month=month, year=year, time=15)
 
-    qv = plt.quiver(winds.lon, winds.lat, winds.u[0][0], winds.v[0][0],
-                    scale=20, pivot='middle', color='r')
-    qk = plt.quiverkey(qv, 0.8, 0.9, 1, r'1 $\frac{m}{s}$',
-                       labelpos='E', coordinates='figure')
+    # qv = plt.quiver(winds.lon, winds.lat, winds.u[0][0], winds.v[0][0],
+    #                 scale=20, pivot='middle', color='r')
+    # qk = plt.quiverkey(qv, 0.8, 0.9, 1, r'1 $\frac{m}{s}$',
+    #                    labelpos='E', coordinates='figure')
 
     # remove default title
     ax.set_title('')
@@ -584,7 +584,7 @@ def plot_residual(ds, plot_type='weekly', city='toronto', diff=False, **kwargs):
 
 if __name__ == '__main__':
     test_file = os.path.join(
-        tropomi_pkl_month, 'toronto/2019_M05')
+        tropomi_pkl_month, 'toronto/2020_M05')
     infile = open(test_file, 'rb')
     ds = pickle.load(infile)
     infile.close()
