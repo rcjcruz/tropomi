@@ -74,7 +74,10 @@ def add_wind(f, city='toronto'):
     # Load dataset
     no2 = ot.dsread(f, city)
     # Subset NO2 dataset over +-1 deg lat/lon around the city
-    no2 = no2.where((no2.longitude >= w) & (no2.longitude <= e) & (no2.latitude >= s) & (no2.latitude <= n), drop=True)
+    no2 = no2.where((no2.longitude >= w) & 
+                    (no2.longitude <= e) & 
+                    (no2.latitude >= s) & 
+                    (no2.latitude <= n), drop=True)
     if no2.nitrogendioxide_tropospheric_column.size == 0:
         return None
     no2 = no2.rename({'time': 'measurement_time'})  # rename time
@@ -297,9 +300,9 @@ def add_wind_and_grid(f, city='toronto'):
 
 if __name__ == '__main__':
     city = 'toronto'
-    for i in np.arange(20200526, 20200532, 1):
-        f = str(i)
-        add_wind_and_grid(f)
+    # for i in np.arange(20200526, 20200532, 1):
+    #     f = str(i)
+    #     add_wind_and_grid(f)
 
     # fpath = winds_pkl + city + '/20200507_raw'
     # infile = open(fpath, 'rb')
