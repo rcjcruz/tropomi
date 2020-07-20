@@ -51,6 +51,7 @@ def get_wind_speed_and_dir(ds):
 
 ################################
 
+
 def add_wind(f, city='toronto'):
     """
     Return a dataset for data f over city with wind data that matches lat/lon/time
@@ -61,7 +62,8 @@ def add_wind(f, city='toronto'):
         city (str): city of interest.
 
     Returns:
-        no2 (xr.Dataset): dataset with NO2, wind speed, and bearing.
+        no2 (xr.Dataset): dataset of NO2 TVCD with eastward (u) and northward (v)
+            wind components.
 
     >>> no2 = add_wind('20200501', 'toronto')
     """
@@ -74,23 +76,25 @@ def add_wind(f, city='toronto'):
     # Load dataset
     no2 = ot.dsread(f, city)
     # Subset NO2 dataset over +-1 deg lat/lon around the city
-    no2 = no2.where((no2.longitude >= w) & 
-                    (no2.longitude <= e) & 
-                    (no2.latitude >= s) & 
+    no2 = no2.where((no2.longitude >= w) &
+                    (no2.longitude <= e) &
+                    (no2.latitude >= s) &
                     (no2.latitude <= n), drop=True)
     if no2.nitrogendioxide_tropospheric_column.size == 0:
         return None
     no2 = no2.rename({'time': 'measurement_time'})  # rename time
-    no2['wind_speed'] = (['sounding'], np.zeros([no2.sounding.size]))  # create ws variable
-    no2['bearing'] = (['sounding'], np.zeros([no2.sounding.size]))  # create bearing variable
+    # create u-component variable
+    no2['u'] = (['sounding'], np.zeros([no2.sounding.size]))
+    # create v-component variable
+    no2['v'] = (['sounding'], np.zeros([no2.sounding.size]))
 
     # Load wind
     f_str = '*' + f + '*'
     fpath = os.path.join(winds, f_str)
     for file in glob.glob(fpath):
         wind = xr.open_dataset(file)
-        interp_wind = wind.interp(lat=no2.latitude, lon=no2.longitude, method='linear')
-        interp_wind['wind_speed'], interp_wind['bearing'] = get_wind_speed_and_dir(interp_wind)
+        interp_wind = wind.interp(
+            lat=no2.latitude, lon=no2.longitude, method='linear')
         interp_wind = interp_wind.dropna(dim='sounding')
 
     # iterate over each observation and append wind speed and bearing to no2
@@ -103,13 +107,13 @@ def add_wind(f, city='toronto'):
         # load averaged winds from hour
         winds_from_hour = interp_wind.isel(time=hour)
 
-        for j in range(len(winds_from_hour.wind_speed)):
-            # add wind speed and bearing to matching lat/lon/timestamp
+        for j in range(len(winds_from_hour.U850)):
+            # add uv- wind components to matching lat/lon/timestamp
             if ((winds_from_hour.lon.values[j] == lon) and
                     (winds_from_hour.lat.values[j] == lat)):
-                no2.wind_speed[i] += winds_from_hour.wind_speed.values[j]
-                no2.bearing[i] += winds_from_hour.bearing.values[j]
-                
+                no2.u[i] += winds_from_hour.U850.values[j]
+                no2.v[i] += winds_from_hour.V850.values[j]
+
     # pickle files
     fdir = winds_pkl + city + '/'
     filename = f + '_raw'
@@ -121,26 +125,27 @@ def add_wind(f, city='toronto'):
 
 ################################
 
+
 def grid_data(ds, city='toronto', res=0.05):
     """
     Return a xr.Dataset with NO2, wind speed, and bearing aggregated and averaged
     over a uniform lat/longrid over city with a resolution res. Pickles dataset in 
     '/export/data/scratch/tropomi_rc/wind_pkl/'
-    
+
     Args:
         ds (xr.Dataset): dataset of raw NO2 TVCD and interpolated wind speed and
             bearing.
         city (str): city name.
         res (float): resolution.
-        
+
     Returns:
-        new_ds (xr.Dataset): dataset of aggregated and averaged NO2 TVCD, wind 
-            speed, and bearing.
-            
+        new_ds (xr.Dataset): dataset of aggregated and averaged NO2 TVCD with
+            eastward (u) and northward (v) wind components.
+
     >>> ds = add_wind('20200501', 'toronto')
     >>> ds = grid_data(ds, 'toronto')
     """
-    
+
     # Lat/lon max/min
     plot_limits = poi.get_plot_limits(city=city, extent=1, res=res)
     lonmn, lonmx, latmn, latmx = plot_limits
@@ -151,15 +156,15 @@ def grid_data(ds, city='toronto', res=0.05):
 
     # arr will accumulate the values within each grid entry
     no2_arr = np.zeros([lat_bnds.size, lon_bnds.size])
-    ws_arr = np.zeros([lat_bnds.size, lon_bnds.size])
-    bear_arr = np.zeros([lat_bnds.size, lon_bnds.size])
+    u_arr = np.zeros([lat_bnds.size, lon_bnds.size])
+    v_arr = np.zeros([lat_bnds.size, lon_bnds.size])
     # dens_arr will count the number of observations that occur within that grid entry
     dens_arr = np.zeros([lat_bnds.size, lon_bnds.size], dtype=np.int32)
 
     # Load datasets
     no2 = ds.nitrogendioxide_tropospheric_column.values
-    ws = ds.wind_speed.values
-    bear = ds.bearing.values
+    u = ds.u.values
+    v = ds.v.values
     lat = ds.latitude.values
     lon = ds.longitude.values
 
@@ -172,8 +177,8 @@ def grid_data(ds, city='toronto', res=0.05):
 
     # Keep no2 values that are within the bounded lat/lon
     no2 = no2[filter_arr]
-    ws = ws[filter_arr]
-    bear = bear[filter_arr]
+    u = u[filter_arr]
+    v = v[filter_arr]
 
     # Filter lat/lon mn/mx values for each grid square
     vlonmn = np.minimum(ds['longitude_bounds'][0].values,
@@ -202,19 +207,19 @@ def grid_data(ds, city='toronto', res=0.05):
         # add 1 to dens_arr to increase the count of observations found in that
         # grid square
         no2_arr[lat_slice, lon_slice] += no2[i]
-        ws_arr[lat_slice, lon_slice] += ws[i]
-        bear_arr[lat_slice, lon_slice] += bear[i]
+        u_arr[lat_slice, lon_slice] += u[i]
+        v_arr[lat_slice, lon_slice] += v[i]
         dens_arr[lat_slice, lon_slice] += 1
 
     # Divide val_arr by dens_arr; if dividing by 0, return 0 in that entry
     # no2_arr = no2_arr.clip(min=0)
-    
+
     no2_arr_mean = np.divide(no2_arr, dens_arr, out=(
         np.zeros_like(no2_arr)), where=(dens_arr != 0))
-    ws_arr_mean = np.divide(ws_arr, dens_arr, out=(
-        np.zeros_like(ws_arr)), where=(dens_arr != 0))
-    bear_arr_mean = np.divide(bear_arr, dens_arr, out=(
-        np.zeros_like(bear_arr)), where=(dens_arr != 0))
+    u_arr_mean = np.divide(u_arr, dens_arr, out=(
+        np.zeros_like(u_arr)), where=(dens_arr != 0))
+    v_arr_mean = np.divide(v_arr, dens_arr, out=(
+        np.zeros_like(v_arr)), where=(dens_arr != 0))
 
     # CREATE NEW DATASET WITH NO2, WS, AND BEARING FOR EACH LAT, LON
     new_ds = xr.Dataset({
@@ -222,55 +227,56 @@ def grid_data(ds, city='toronto', res=0.05):
             data=np.array([no2_arr_mean]),   # enter data here
             dims=['time', 'latitude', 'longitude'],
             coords={'latitude': ('latitude', lat_bnds),
-                      'longitude': ('longitude', lon_bnds),
-                      'time': np.array([ds.measurement_time.values])},   
+                    'longitude': ('longitude', lon_bnds),
+                    'time': np.array([ds.measurement_time.values])},
             attrs={'units': 'mol m-2'}),
-        'wind_speed': xr.DataArray(
-            data=np.array([ws_arr_mean]),   # enter data here
+        'u': xr.DataArray(
+            data=np.array([u_arr_mean]),   # enter data here
             dims=['time', 'latitude', 'longitude'],
             coords={'latitude': ('latitude', lat_bnds),
-                      'longitude': ('longitude', lon_bnds),
-                      'time': np.array([ds.measurement_time.values])},
+                    'longitude': ('longitude', lon_bnds),
+                    'time': np.array([ds.measurement_time.values])},
             attrs={'units': 'm/s'}),
-        'bearing': xr.DataArray(
-            data=np.array([bear_arr_mean]),   # enter data here
+        'v': xr.DataArray(
+            data=np.array([v_arr_mean]),   # enter data here
             dims=['time', 'latitude', 'longitude'],
             coords={'latitude': ('latitude', lat_bnds),
-                      'longitude': ('longitude', lon_bnds),
-                      'time': np.array([ds.measurement_time.values])},
-            attrs={'units': 'degrees'})},
+                    'longitude': ('longitude', lon_bnds),
+                    'time': np.array([ds.measurement_time.values])},
+            attrs={'units': 'm/s'})},
         attrs={'description': 'dataset for NO2 TVCD, wind speed, and bearing'})
-    
+
     return new_ds
-    
+
 ################################
+
 
 def add_wind_and_grid(f, city='toronto'):
     """
     Return dataset for f over city with no2, wind speeds, and bearing 
     averaged. Dataset is pickled to 
     '/export/data/scratch/tropomi_rc/wind_pkl/city/'
-    
+
     Args: 
         f (str): date of observation in format YYYYMMDD.
         city (name): city name. 
-    
+
     Returns:
-        ds (xr.Dataset): dataset of aggregated and averaged NO2 TVCD, wind 
-        speed, and bearing.
+        ds (xr.Dataset): dataset of aggregated and averaged NO2 TVCD with
+            eastward (u) and northward (v) wind components.
     """
     start_time = time.time()
     
     # add wind and grid data
     ds = add_wind(f, city)
-    
+
     if ds != None:
         gridded_ds = grid_data(ds, city)
 
         # count number of nonzero values in no2
         nonzero = np.count_nonzero(gridded_ds.no2.values)
         total = np.size(gridded_ds.no2.values)
-        
+
         fdir = winds_pkl + city + '/'
         if nonzero / total < 0.25:
             # ins = insufficient
@@ -293,13 +299,16 @@ def add_wind_and_grid(f, city='toronto'):
             int(hours), int(minutes), seconds))
         print('------------------------------------------------------------')
         return gridded_ds
-    
+
     else:
         print('{} had insufficient data.'.format(f))
         print('------------------------------------------------------------')
 
+
 if __name__ == '__main__':
     city = 'toronto'
+    f = '20200520'
+    no2 = add_wind_and_grid(f)
     # for i in np.arange(20200526, 20200532, 1):
     #     f = str(i)
     #     add_wind_and_grid(f)
