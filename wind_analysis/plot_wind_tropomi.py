@@ -30,10 +30,10 @@ GeoAxes._pcolormesh_patched = Axes.pcolormesh
 
 from paths import *
 import points_of_interest as poi 
-import add_wind as aw
+import add_wind_and_grid as aw
 
 
-def plot_tropomi(ds, city='toronto', **kwargs):
+def plot_tropomi(ds, city='toronto', wind=False):
     """
     Return a Cartopy plot of averaged TROPOMI data ds over a given city.
     Aggregated data type is supplied to plot_type.
@@ -56,12 +56,10 @@ def plot_tropomi(ds, city='toronto', **kwargs):
     
     # load no2 and wind components
     no2 = ds.no2.where(ds.no2 > 0, np.nan)
-    ws = ds.wind_speed
-    bear = ds.bearing
     lat = ds.no2.latitude
     lon = ds.no2.longitude
-    u = -ws*np.sin(np.radians(bear))
-    v = -ws*np.cos(np.radians(bear))
+    u = ds.u
+    v = ds.v
 
     # Load date and location
     date_str = str(pd.to_datetime(ds.time.values)[0].date())
@@ -116,11 +114,12 @@ def plot_tropomi(ds, city='toronto', **kwargs):
                                          y='latitude',
                                          add_colorbar=False)
 
-    # Plot winds
-    qv = plt.quiver(lon, lat, u[0, :, :],
-                    v[0, :, :], scale=400, color='k')
-    qk = plt.quiverkey(qv, 0.8, 0.9, 10, r'10 $\frac{m}{s}$',
-                       labelpos='E', coordinates='figure')
+    # Plot winds if wind is True
+    if wind:
+        qv = plt.quiver(lon, lat, u[0, :, :],
+                        v[0, :, :], scale=400, color='k')
+        qk = plt.quiverkey(qv, 0.8, 0.9, 10, r'10 $\frac{m}{s}$',
+                        labelpos='E', coordinates='figure')
 
     # remove default title
     ax.set_title('')
@@ -169,12 +168,23 @@ def plot_tropomi(ds, city='toronto', **kwargs):
 ################################
 
 city = 'toronto'
-f = '20200520'
 # add_wind(f, city)
 
-fpath = winds_pkl + city + '/20200522_avg'
+# good_dates = [20200506, 20200513, 20200516, 20200520, 20200521, 20200522,
+#               20200523, 20200524, 20200525, 20200526, 20200531]
+# for date in good_dates:
+#     f_str = '/' + str(date) + '_avg'
+#     fpath = winds_pkl + city + f_str
+#     infile = open(fpath, 'rb')
+#     ds = pickle.load(infile)
+#     infile.close()
+
+#     plot_tropomi(ds)
+
+f_str = '/' + str(20200520) + '_avg'
+fpath = winds_pkl + city + f_str
 infile = open(fpath, 'rb')
 ds = pickle.load(infile)
 infile.close()
 
-plot_tropomi(ds)
+plot_tropomi(ds, wind=True)

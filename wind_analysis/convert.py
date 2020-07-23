@@ -6,9 +6,11 @@ convert.py
 Script containing functions:
     - haversine(lat1, lon1, lat2, lon2, bearing=False)
     - convert(lat1, lon1, lat2, lon2, out_units='km')
+    - rotate(pivot, point, angle)
 
 Functions to convert lat/lon coordinates to xy-coordinates using the 
-haversine formula given in https://www.movable-type.co.uk/scripts/latlong.html.
+haversine formula given in https://www.movable-type.co.uk/scripts/latlong.html 
+and rotate points on a Cartesian grid. 
 """
 
 import numpy as np
@@ -17,7 +19,7 @@ from collections import namedtuple
 
 ################################
 
-def haversine(lat1, lon1, lat2, lon2, bearing=False):
+def haversine(point1, point2, bearing=False):
     """
     Use the haversine formula to calculate distance between two sets of 
     lat/lon points. 
@@ -25,10 +27,8 @@ def haversine(lat1, lon1, lat2, lon2, bearing=False):
     Reference: https://www.movable-type.co.uk/scripts/latlong.html
 
     Args:
-        lat1 (float): latitude of initial point
-        lon1 (float): longitude of initial point
-        lat2 (float): latitude of final point
-        lon2 (float): longitude of final point
+        point1 (tuple of floats): latitude and longitude of first point.
+        point2 (tuple of floats): latitude and longitude of second point.
         bearing (bool): if True, bearing to each final point will be returned.
 
     Returns:
@@ -36,6 +36,9 @@ def haversine(lat1, lon1, lat2, lon2, bearing=False):
         bear (float): bearing to final point if bearing is True.        
     """
     # convert to radians
+    lat1, lon1 = point1
+    lat2, lon2 = point2 
+    
     lat1_r = np.radians(lat1)
     lat2_r = np.radians(lat2)
 
@@ -65,20 +68,18 @@ def haversine(lat1, lon1, lat2, lon2, bearing=False):
 
 ################################
 
-def convert_to_cartesian(lat1, lon1, lat2, lon2, out_units='km'):
+def convert_to_cartesian(point1, point2, out_units='km'):
     """
     Convert lat/lon coordinates to Cartesian.
 
     Args:
-        lat1 (float): latitude of initial point
-        lon1 (float): longitude of initial point
-        lat2 (float): latitude of final point
-        lon2 (float): longitude of final point
+        point1 (tuple of floats): latitude and longitude of first point.
+        point2 (tuple of floats): latitude and longitude of second point.
         out_units (str): units for output. Default: 'km'
     Return
         x, y (floats): xy-coordinates of lat2/lon2 relative to lat1/lon1.
     """
-    dist, bear = haversine(lat1, lon1, lat2, lon2, bearing=True)
+    dist, bear = haversine(point1, point2, bearing=True)
     x = dist * np.cos(np.radians(bear))
     y = dist * np.sin(np.radians(bear))
 
@@ -90,6 +91,38 @@ def convert_to_cartesian(lat1, lon1, lat2, lon2, out_units='km'):
         raise ValueError('out_units must be one of the following: "km", "m"')
 
 ################################
+
+def rotate(pivot, point, angle):
+    """
+    Return xy-coordinate for an initial point (x, y) rotated by angle (in
+    radians) around a pivot (x, y).
+
+    Args:
+        pivot (tuple of floats): pivot point of rotation.
+        point (tuple of floats): xy-coordinates of point to be rotated.
+        angle (float): angle to rotate the point around the pivot.
+            Must be in radians.
+    Returns:
+        (xnew, ynew): xy-coordinates of rotated point.
+    """
+    # to rotate cw, need negative bearing
+    s = np.sin(np.radians(angle))
+    c = np.cos(np.radians(angle))
+
+    # translate point back to origin
+    x = point[0] - pivot[0]
+    y = point[1] - pivot[1]
+
+    # rotate clockwise to the x-axis
+    xnew = x * c + y * s
+    ynew = x * (-s) + y * c
+
+    # translate point back
+    xnew += pivot[0]
+    ynew += pivot[1]
+
+    return (xnew, ynew)
+
 
 if __name__ == '__main__':
     Point = namedtuple('Point', 'lon lat')
@@ -103,9 +136,9 @@ if __name__ == '__main__':
     HAMILTON = cities['hamilton']
 
     dist0, bear0 = haversine(
-        TORONTO[1], TORONTO[0], TORONTO[1], TORONTO[0], bearing=True)
+        (TORONTO[1], TORONTO[0]), (TORONTO[1], TORONTO[0]), bearing=True)
     dist1, bear1 = haversine(
-        TORONTO[1], TORONTO[0], HAMILTON[1], HAMILTON[0], bearing=True)
+        (TORONTO[1], TORONTO[0]), (HAMILTON[1], HAMILTON[0]), bearing=True)
 
     x0, y0 = dist0*np.cos(np.radians(bear0)), dist0*np.sin(np.radians(bear0))
     x1, y1 = dist1*np.cos(np.radians(bear1)), dist1*np.sin(np.radians(bear1))

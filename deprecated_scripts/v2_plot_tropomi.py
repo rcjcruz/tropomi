@@ -8,7 +8,8 @@ from collections import namedtuple
 import tropomi_functions as tf
 
 # Variables
-file_name = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200510T172154_20200510T190325_13341_01_010302_20200512T224427.nc'
+file_name = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200502T163033_20200502T181203_13227_01_010302_20200504T093521.nc'
+
 xno2_path = '/PRODUCT/SUPPORT_DATA/DETAILED_RESULTS/'
 sds_name = 'nitrogendioxide_tropospheric_column'
 total_sds_name = 'nitrogendioxide_total_column'

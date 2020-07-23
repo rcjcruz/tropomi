@@ -8,8 +8,8 @@ colors_list = list(colors._colors_full_map.values())
 X = np.array([-1,-1, -2])
 Y = np.array([-1,-2, -1])
 
-U = np.array([-1, -1, -1])
-V = np.array([-1, -1, 0])
+U = np.array([-1, 0, -1])
+V = np.array([0, -1, 0])
 
 speed = np.sqrt(U**2 + V**2)
 bearing = np.degrees(np.arctan2(V, U))
@@ -77,7 +77,7 @@ for i in range(len(X)):
     point = (X[i], Y[i])
     angle = bearing[i]
     X_new[i], Y_new[i] = rotate(pivot, point, angle)
-    U_new[i] = np.sqrt((X[i]) ** 2 + (Y[i]) ** 2)
+    U_new[i] = np.sqrt((U[i]) ** 2 + (V[i]) ** 2)
         
 # # point = (U[0][0], V[0][0])
 # # pivot = (0,0)
