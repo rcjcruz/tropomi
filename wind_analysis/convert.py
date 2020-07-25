@@ -27,8 +27,8 @@ def haversine(point1, point2, bearing=False):
     Reference: https://www.movable-type.co.uk/scripts/latlong.html
 
     Args:
-        point1 (tuple of floats): latitude and longitude of first point.
-        point2 (tuple of floats): latitude and longitude of second point.
+        point1 (float, float): latitude and longitude of first point.
+        point2 (float, float): latitude and longitude of second point.
         bearing (bool): if True, bearing to each final point will be returned.
 
     Returns:
@@ -51,13 +51,12 @@ def haversine(point1, point2, bearing=False):
     a2 = np.cos(lat1_r) * np.cos(lat2_r) * np.power(np.sin(dlon_r / 2.), 2.)
     a = a1 + a2
     c = 2. * np.arctan2(np.sqrt(a), np.sqrt(1-a))
-    d = 6371. * c
+    d = abs(6371. * c)
     # calculate bearing
     if bearing:
-        y = np.sin(dlon_r * np.cos(lat2_r))
-        x = np.cos(lat1_r) * np.sin(lat2_r) - np.sin(lat1_r) * \
-            np.cos(lat2_r) * np.cos(dlon_r)
-        bear = np.degrees(np.arctan2(y, x))
+        y = np.sin(dlon_r) * np.cos(lat2_r)
+        x = np.cos(lat1_r) * np.sin(lat2_r) - np.sin(lat1_r) * np.cos(lat2_r) * np.cos(dlon_r)
+        bear = np.degrees(np.arctan2(x, y))
 
         if bear < 0:
             bear += 360.
@@ -95,13 +94,13 @@ def convert_to_cartesian(point1, point2, out_units='km'):
 def rotate(pivot, point, angle):
     """
     Return xy-coordinate for an initial point (x, y) rotated by angle (in
-    radians) around a pivot (x, y).
+    degrees) around a pivot (x, y).
 
     Args:
         pivot (tuple of floats): pivot point of rotation.
         point (tuple of floats): xy-coordinates of point to be rotated.
         angle (float): angle to rotate the point around the pivot.
-            Must be in radians.
+            Must be in degrees.
     Returns:
         (xnew, ynew): xy-coordinates of rotated point.
     """

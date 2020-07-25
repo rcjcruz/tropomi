@@ -71,12 +71,15 @@ def add_wind(f, city='toronto'):
     start_time = time.time()
 
     # Load city limits
-w, e, s, n = poi.get_plot_limits(city=city, extent=1, res=0)
+    w, e, s, n = poi.get_plot_limits(city=city, extent=1, res=0)
 
     # Load dataset
     no2 = ot.dsread(f, city)
     # Subset NO2 dataset over +-1 deg lat/lon around the city
-no2 = no2.where((no2.longitude >= w) & (no2.longitude <= e) & (no2.latitude >= s) & (no2.latitude <= n), drop=True)
+    no2 = no2.where((no2.longitude >= w) & 
+                    (no2.longitude <= e) & 
+                    (no2.latitude >= s) & 
+                    (no2.latitude <= n), drop=True)
     if no2.nitrogendioxide_tropospheric_column.size == 0:
         return None
     no2 = no2.rename({'time': 'measurement_time'})  # rename time
@@ -304,23 +307,16 @@ def add_wind_and_grid(f, city='toronto'):
 
 if __name__ == '__main__':
     city = 'toronto'
-    f = '20200510'
-    ds = add_wind(f)
-    # for i in np.arange(20200501, 20200532, 1):
-    #     f = str(i)
-    #     add_wind_and_grid(f)
+    # f = '20200510'
+    # ds = add_wind(f)
         
-    # for j in np.arange(20190501, 20190532, 1):
-    #     f = str(j)
-    #     add_wind_and_grid(f)
-        
-    # for k in np.arange(20180501, 20180502, 1):
-    #     f = str(k)
-    #     add_wind_and_grid(f)
+    for k in np.arange(20190429, 20190431, 1):
+        f = str(k)
+        add_wind_and_grid(f)
 
 
 
-    # fpath = winds_pkl + city + '/20200507_raw'
+    # fpath = winds_pkl + city + '/20200501_raw'
     # infile = open(fpath, 'rb')
     # ds = pickle.load(infile)
     # infile.close()

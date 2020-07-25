@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Usage: open_wind_tropomi.py
+open_wind_tropomi.py
 
 Script contains functions:
     - dsmod(ds)
@@ -83,7 +83,8 @@ def dsread(f, city='toronto'):
     ds = ds.assign(longitude_bounds = bds['longitude_bounds'])
     
     # Keep only NO2, qa_value, lat/lon bounds
-    ds = ds[['nitrogendioxide_tropospheric_column', 'qa_value', 
+    ds = ds[['nitrogendioxide_tropospheric_column', 
+             'nitrogendioxide_tropospheric_column_precision', 'qa_value', 
              'longitude_bounds', 'latitude_bounds']] 
     
     # Make into 1D array
@@ -99,9 +100,9 @@ def dsread(f, city='toronto'):
 if __name__ == '__main__':
     # ds = dsread('*__20200501*.nc')
     city='toronto'
-    ds = dsread('20200502', city='toronto')
-    w, e, s, n = poi.get_plot_limits(city=city, extent=1, res=0)
-    ds2 = ds.where((ds.longitude >= w) & (ds.longitude <= e) & (ds.latitude >= s) & (ds.latitude <= n), drop=True)
+    ds = dsread('20200520', city='toronto')
+    # w, e, s, n = poi.get_plot_limits(city=city, extent=1, res=0)
+    # ds2 = ds.where((ds.longitude >= w) & (ds.longitude <= e) & (ds.latitude >= s) & (ds.latitude <= n), drop=True)
 
     # test_file = '/export/data/scratch/tropomi/no2/S5P_OFFL_L2__NO2____20200501T164929_20200501T183100_13213_01_010302_20200503T094618.nc'
     # data2 = xr.open_dataset(test_file, group='/PRODUCT')
