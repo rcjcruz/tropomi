@@ -112,7 +112,7 @@ def plot_tropomi(ds, city='toronto', wind=False):
                                          robust=True,
                                          x='longitude',
                                          y='latitude',
-                                         add_colorbar=False)
+                                         add_colorbar=True)
 
     # Plot winds if wind is True
     if wind:

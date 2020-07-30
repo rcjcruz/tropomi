@@ -23,6 +23,17 @@ cities = {'toronto': Point(-79.3832, 43.6532),
           'vancouver': Point(-123.1207, 49.2827),
           'los_angeles': Point(-118.2437, 34.0522)}
 
+wind_type = {'A': [0, 2], 'B': [2, 4], 'C': [4, 6], 'D': [6, 8],
+             'E': [8, 10], 'F': [10, 12], 'G': [12, 15], 'H': [15, 20], 'I': [20, 30]}
+
+nomen_dict = {'may_1819': 'MAY89', 'may_20': 'MAY20',
+                'march_19': 'MAR19', 'march_20': 'MAR20',
+                'april_19': 'APR19', 'april_20': 'APR20',
+                'june_19': 'JUN19', 'june_20': 'JUN20',
+                'pre-vid': 'PRE19', 'covid':  'COV19',
+                'test': 'TESTS',
+                'rotated': 'ROT', 'cartesian': 'CAR'}
+
 
 def get_plot_limits(city, extent=1, res=0.05):
     cities = {'toronto': Point(-79.3832, 43.6532),
@@ -37,8 +48,8 @@ def get_plot_limits(city, extent=1, res=0.05):
         print('Not a valid city. Valid cities include %s' %
               list(cities.keys()))
     else:
-        plot_limits = (city_coords.lon-extent, #llcrnlon
-                       city_coords.lon+extent+res, #urcrnlon
-                       city_coords.lat-extent, #llcrnlat
-                       city_coords.lat+extent+res) #urcrnlat
+        plot_limits = (city_coords.lon-extent,  # llcrnlon
+                       city_coords.lon+extent+res,  # urcrnlon
+                       city_coords.lat-extent,  # llcrnlat
+                       city_coords.lat+extent+res)  # urcrnlat
         return plot_limits
