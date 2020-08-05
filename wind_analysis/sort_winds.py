@@ -48,11 +48,11 @@ def sort_winds(tf, city='toronto', return_dates=False):
     # dictionary of wind types and possible date aggregations
     wind_type = poi.wind_type
 
-dates_dict = {'may_1819': ['201805*', '201905*'], 'may_20': ['202005*'],
-                'march_19': ['201903*'], 'march_20': ['202003*'],
-                'april_19': ['201904*'], 'april_20': ['202004*'],
-                'june_19': ['201906*'], 'june_20': ['202006*'],
-                'pre-vid': ['2019*'], 'covid': ['2020*']}
+    dates_dict = {'may_1819': ['201805*', '201905*'], 'may_20': ['202005*'],
+                    'march_19': ['201903*'], 'march_20': ['202003*'],
+                    'april_19': ['201904*'], 'april_20': ['202004*'],
+                    'june_19': ['201906*'], 'june_20': ['202006*'],
+                    'pre-vid': ['2019*'], 'covid': ['2020*']}
 
     # create dict to store wind datasets with same names as wind_type
     ws_dict = {}
@@ -99,4 +99,4 @@ dates_dict = {'may_1819': ['201805*', '201905*'], 'may_20': ['202005*'],
 
 
 if __name__ == '__main__':
-    ws_dict = sort_winds('april_20', 'toronto')
+    ws_dict = sort_winds('covid', 'toronto')

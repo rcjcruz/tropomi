@@ -543,8 +543,7 @@ def plot_residual(ds, plot_type='weekly', city='toronto', diff=False, **kwargs):
 
     # set colorbar properties
     if diff:
-        cba = create_colorbar(
-            im=ims[0], ax=axes[:-1], label='Mean NO$_2$ TVCD')
+        cba = create_colorbar(im=ims[0], ax=axes[:-1], label='Mean NO$_2$ TVCD')
         cbb = plt.colorbar(
             mappable=ims[-1], ax=axes[-1], orientation='horizontal')
         cbb.set_label(r'Difference', labelpad=10, fontsize=14)

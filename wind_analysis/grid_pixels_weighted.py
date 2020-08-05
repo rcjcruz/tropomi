@@ -16,12 +16,17 @@ import os
 import glob
 import string
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy import stats
+import matplotlib.pyplot as plt           
+
 
 from paths import *
 import points_of_interest as poi
 import sort_winds as sw
+
+# if data_type is rotate, need to first fit a 2D gaussian to cartesian values 
+# then find the major axis from the most representative level
+
+# the loaded cartesian dataset has an average_wind_direction 
 
 def grid_weighted(date, data_type, city='toronto', dist=70., res=1., avg=False):
     """
@@ -46,6 +51,10 @@ def grid_weighted(date, data_type, city='toronto', dist=70., res=1., avg=False):
         ds (xr.Dataset): dataset including the weighted average of NO2 TVCD
             for each grid pixel (no2_avg) including error (no2_sem). Raw 
             data (no2_raw) and weights are included for further data processing. 
+    
+    # To grid one day 
+    >>> ds = grid_weighted('20200401', data_type='cartesian', res=5, dist=70, avg=True)
+
     """
     if isinstance(date, str):
         f_str = city + '/' + date
@@ -176,6 +185,7 @@ def grid_weighted(date, data_type, city='toronto', dist=70., res=1., avg=False):
     return ds
 
 
+
 def average(tf, data_type, city='toronto', dist=70., res=1., wind_type='all', pickle_bool=True):
     """
     Return a dictionary with wind_types as keys and an averaged dataset of 
@@ -195,6 +205,8 @@ def average(tf, data_type, city='toronto', dist=70., res=1., wind_type='all', pi
             a combination of these values.
         pickle_bool (bool): bool to determine if dictionary will be pickled.
             Default: True.
+            
+    >>> average('covid')
     """
 
     # create grid with resolution res
@@ -296,14 +308,3 @@ def average(tf, data_type, city='toronto', dist=70., res=1., wind_type='all', pi
     return avg_dict
 
 
-if __name__ == '__main__':
-    # # ds1 = grid_weighted('20200520', data_type='rotated',
-    # #                     res=1, dist=2, avg=False)
-
-    alphabet_string = string.ascii_uppercase
-    alphabet_list = list(alphabet_string)
-
-    time = 'june_20'
-    for letter in alphabet_string[:9]:
-        wind_dicts = average(time, data_type='rotated',
-                             dist=70, wind_type=letter)
